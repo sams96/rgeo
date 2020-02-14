@@ -80,7 +80,7 @@ func polygonContainsCoord(geo *geom.Polygon, pt geom.Coord) (bool, error) {
 // loopFromPolygon converts a geom.Polygon to a s2.Loop. We use loops instead of
 // s2.Polygon as the s2.Polygon implementation is incomplete.
 //
-// From github.com/dgraph-io/dgraph
+// Modified from github.com/dgraph-io/dgraph
 func loopFromPolygon(p *geom.Polygon) (*s2.Loop, error) {
 	// go implementation of s2 does not support more than one loop (and will
 	// panic if the size of the loops array > 1). So we will skip the holes in
@@ -104,7 +104,8 @@ func loopFromPolygon(p *geom.Polygon) (*s2.Loop, error) {
 	// Since our clockwise check was approximate, we check the cap and reverse
 	// if needed.
 	if l.CapBound().Radius().Degrees() > 90 {
-		l = loopFromRing(r, !reverse)
+		// Remaking the loop sometimes caused problems, this works better
+		l.Invert()
 	}
 	return l, nil
 }
