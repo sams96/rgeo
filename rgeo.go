@@ -10,7 +10,9 @@ import (
 	"github.com/twpayne/go-geom/encoding/geojson"
 )
 
-const geoDataPath = "ne_110m_admin_0_countries.geojson"
+var ErrCountryNotFound = errors.Errorf("Country not found")
+
+const geoDataPath = "ne_50m_admin_0_countries.geojson"
 
 // reverseGeocode returns the country in which the given coordinate is located
 func ReverseGeocode(loc geom.Coord) (string, error) {
@@ -33,7 +35,11 @@ func ReverseGeocode(loc geom.Coord) (string, error) {
 				return "", err
 			}
 			if in {
-				return country.Properties["ADMIN"].(string), err
+				if name, ok := country.Properties["ADMIN"].(string); ok {
+					return name, nil
+				}
+
+				return "", errors.Errorf("Name not found")
 			}
 		case *geom.MultiPolygon:
 			for i := 0; i < geo.NumPolygons(); i++ {
@@ -42,7 +48,11 @@ func ReverseGeocode(loc geom.Coord) (string, error) {
 					return "", err
 				}
 				if in {
-					return country.Properties["ADMIN"].(string), err
+					if name, ok := country.Properties["ADMIN"].(string); ok {
+						return name, nil
+					}
+
+					return "", errors.Errorf("Name not found")
 				}
 			}
 		default:
@@ -50,7 +60,7 @@ func ReverseGeocode(loc geom.Coord) (string, error) {
 		}
 	}
 
-	return "", errors.Errorf("Country not found")
+	return "", ErrCountryNotFound
 }
 
 // polygonContainsCoord checks if a geom.Coord is within a *geom.Polygon
@@ -68,7 +78,7 @@ func polygonContainsCoord(geo *geom.Polygon, pt geom.Coord) (bool, error) {
 }
 
 // loopFromPolygon converts a geom.Polygon to a s2.Loop. We use loops instead of
-// s2.Polygon as the s2.Polygon implemention is incomplete.
+// s2.Polygon as the s2.Polygon implementation is incomplete.
 //
 // From github.com/dgraph-io/dgraph
 func loopFromPolygon(p *geom.Polygon) (*s2.Loop, error) {
