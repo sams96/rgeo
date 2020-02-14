@@ -13,7 +13,7 @@ import (
 const geoDataPath = "ne_110m_admin_0_countries.geojson"
 
 // reverseGeocode returns the country in which the given coordinate is located
-func reverseGeocode(loc geom.Coord) (string, error) {
+func ReverseGeocode(loc geom.Coord) (string, error) {
 	geoData, err := os.Open(geoDataPath)
 	if err != nil {
 		return "", err
