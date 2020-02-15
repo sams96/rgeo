@@ -1,6 +1,7 @@
 package rgeo
 
 import (
+	"fmt"
 	"testing"
 
 	geom "github.com/twpayne/go-geom"
@@ -46,19 +47,19 @@ func TestReverseGeocode(t *testing.T) {
 		{
 			name:     "Ocean",
 			in:       []float64{0, 0},
-			err:      ErrCountryNotFound,
+			err:      errCountryNotFound,
 			expected: Location{},
 		},
 		{
 			name:     "North Pole",
 			in:       []float64{-135, 90},
-			err:      ErrCountryNotFound,
+			err:      errCountryNotFound,
 			expected: Location{},
 		},
 		{
 			name: "South Pole",
 			in:   []float64{45, -90},
-			err:  ErrCountryLongNotFound,
+			err:  errCountryLongNotFound,
 			expected: Location{
 				Country:     "Antarctica",
 				CountryLong: "",
@@ -73,6 +74,16 @@ func TestReverseGeocode(t *testing.T) {
 				Country:     "United States of America",
 				CountryLong: "United States of America",
 				CountryCode: "USA",
+			},
+		},
+		{
+			name: "UK",
+			in:   []float64{0, 52},
+			err:  nil,
+			expected: Location{
+				Country:     "United Kingdom",
+				CountryLong: "United Kingdom of Great Britain and Northern Ireland",
+				CountryCode: "GBR",
 			},
 		},
 	}
@@ -92,4 +103,19 @@ func TestReverseGeocode(t *testing.T) {
 		})
 	}
 
+}
+
+func ExampleReverseGeocode() {
+	loc, err := ReverseGeocode([]float64{0, 52})
+	if err != nil {
+		// Handle error
+	}
+
+	fmt.Printf("%s\n", loc.Country)
+	fmt.Printf("%s\n", loc.CountryLong)
+	fmt.Printf("%s\n", loc.CountryCode)
+
+	// Output: United Kingdom
+	// United Kingdom of Great Britain and Northern Ireland
+	// GBR
 }

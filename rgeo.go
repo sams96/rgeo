@@ -1,16 +1,25 @@
-// Package rgeo is a fast, simple solution for local reverse geocoding
-//
-// Rather than relying on external software or online APIs, rgeo packages all of
-// the data it needs in your binary. This means it will only ever work down to
-// the level of cities (though currently just countries), but if that's all you
-// need then this is the library for you.
+/*
+	Package rgeo is a fast, simple solution for local reverse geocoding
 
+	Rather than relying on external software or online APIs, rgeo packages all
+	of the data it needs in your binary. This means it will only ever work down
+	to the level of cities (though currently just countries), but if that's all
+	you need then this is the library for you.
+
+	Installation
+
+	    go get github.com/sams96/rgeo
+
+	Contributing
+
+		Contributions are welcome, I haven't got any guidelines or anything so
+		maybe just make an issue first.
+*/
 package rgeo
 
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 
 	"github.com/golang/geo/s2"
 	"github.com/pkg/errors"
@@ -18,8 +27,8 @@ import (
 	"github.com/twpayne/go-geom/encoding/geojson"
 )
 
-var ErrCountryNotFound = errors.Errorf("country not found")
-var ErrCountryLongNotFound = errors.Errorf("country long name not found")
+var errCountryNotFound = errors.Errorf("country not found")
+var errCountryLongNotFound = errors.Errorf("country long name not found")
 
 type Location struct {
 	Country     string
@@ -27,11 +36,11 @@ type Location struct {
 	CountryCode string
 }
 
-type RGeo struct {
-	dataFile *os.File
-}
-
 // reverseGeocode returns the country in which the given coordinate is located
+//
+// The input is a geom.Coord, which is just a []float64 with the longitude in
+// the zeroth position and the latitude in the first position.
+// ([]float64{lon, lat})
 func ReverseGeocode(loc geom.Coord) (Location, error) {
 	var fc geojson.FeatureCollection
 	if err := json.Unmarshal([]byte(geodata), &fc); err != nil {
@@ -63,7 +72,7 @@ func ReverseGeocode(loc geom.Coord) (Location, error) {
 		}
 	}
 
-	return Location{}, ErrCountryNotFound
+	return Location{}, errCountryNotFound
 }
 
 // Get the relevant strings from the geojson feature
@@ -80,7 +89,7 @@ func getLocationStrings(f *geojson.Feature) (Location, error) {
 
 	countrylong, ok := p["FORMAL_EN"].(string)
 	if !ok {
-		err = ErrCountryLongNotFound
+		err = errCountryLongNotFound
 	}
 
 	countrycode, ok := p["ISO_A3"].(string)
