@@ -112,49 +112,53 @@ func (l Location) String() string {
 
 // polygonContainsCoord checks if a geom.Coord is within a *geom.Polygon
 func polygonContainsCoord(geo *geom.Polygon, pt geom.Coord) (bool, error) {
-	loop, err := loopFromPolygon(geo)
+	polygon, err := polygonFromPolygon(geo)
 	if err != nil {
 		return false, err
 	}
 
-	if loop.ContainsPoint(pointFromCoord(pt)) {
+	if polygon.ContainsPoint(pointFromCoord(pt)) {
 		return true, nil
 	}
 
 	return false, nil
 }
 
-// loopFromPolygon converts a geom.Polygon to a s2.Loop. We use loops instead of
-// s2.Polygon as the s2.Polygon implementation is incomplete.
+// Converts a `*geom.Polygon` to an `*s2.Polygon`
 //
-// Modified from github.com/dgraph-io/dgraph
-func loopFromPolygon(p *geom.Polygon) (*s2.Loop, error) {
-	// go implementation of s2 does not support more than one loop (and will
-	// panic if the size of the loops array > 1). So we will skip the holes in
-	// the polygon and just use the outer loop.
-	r := p.LinearRing(0)
-	n := r.NumCoords()
-	if n < 4 {
-		return nil, errors.Errorf("Can't convert ring with less than 4 pts")
-	}
-	if !r.Coord(0).Equal(geom.XY, r.Coord(n-1)) {
-		return nil, errors.Errorf(
-			"Last coordinate not same as first for polygon: %+v\n", p)
-	}
-	// S2 specifies that the orientation of the polygons should be CCW.  However
-	// there is no restriction on the orientation in WKB (or geojson). To get
-	// the correct orientation we assume that the polygons are always less than
-	// one hemisphere. If they are bigger, we flip the orientation.
-	reverse := isClockwise(r)
-	l := loopFromRing(r, reverse)
+// Modified from types.loopFromPolygon from github.com/dgraph-io/dgraph
+func polygonFromPolygon(p *geom.Polygon) (*s2.Polygon, error) {
+	var loops []*s2.Loop
+	for i := 0; i < p.NumLinearRings(); i++ {
+		r := p.LinearRing(i)
+		n := r.NumCoords()
+		if n < 4 {
+			return nil, errors.Errorf("Can't convert ring with less than 4 pts")
+		}
+		if !r.Coord(0).Equal(geom.XY, r.Coord(n-1)) {
+			return nil, errors.Errorf(
+				"Last coordinate not same as first for polygon: %+v\n", p)
+		}
 
-	// Since our clockwise check was approximate, we check the cap and reverse
-	// if needed.
-	if l.CapBound().Radius().Degrees() > 90 {
-		// Remaking the loop sometimes caused problems, this works better
-		l.Invert()
+		// S2 specifies that the orientation of the polygons should be CCW.
+		// However there is no restriction on the orientation in WKB (or
+		// geojson). To get the correct orientation we assume that the polygons
+		// are always less than one hemisphere. If they are bigger, we flip the
+		// orientation.
+		reverse := isClockwise(r)
+		l := loopFromRing(r, reverse)
+
+		// Since our clockwise check was approximate, we check the cap and
+		// reverse if needed.
+		if l.CapBound().Radius().Degrees() > 90 {
+			// Remaking the loop sometimes caused problems, this works better
+			l.Invert()
+		}
+
+		loops = append(loops, l)
 	}
-	return l, nil
+
+	return s2.PolygonFromLoops(loops), nil
 }
 
 // Checks if a ring is clockwise or counter-clockwise. Note: This uses the
