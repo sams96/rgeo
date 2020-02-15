@@ -12,8 +12,8 @@
 
 	Contributing
 
-		Contributions are welcome, I haven't got any guidelines or anything so
-		maybe just make an issue first.
+	Contributions are welcome, I haven't got any guidelines or anything so maybe
+	just make an issue first.
 */
 package rgeo
 
@@ -38,9 +38,9 @@ type Location struct {
 
 // reverseGeocode returns the country in which the given coordinate is located
 //
-// The input is a geom.Coord, which is just a []float64 with the longitude in
-// the zeroth position and the latitude in the first position.
-// ([]float64{lon, lat})
+// The input is a `geom.Coord`, which is just a `[]float64` with the longitude
+// in the zeroth position and the latitude in the first position.
+// (i.e. `[]float64{lon, lat}`)
 func ReverseGeocode(loc geom.Coord) (Location, error) {
 	var fc geojson.FeatureCollection
 	if err := json.Unmarshal([]byte(geodata), &fc); err != nil {
@@ -104,6 +104,7 @@ func getLocationStrings(f *geojson.Feature) (Location, error) {
 	}, err
 }
 
+// String method for type `Location`
 func (l Location) String() string {
 	return fmt.Sprintf("<Location> %s, %s, %s", l.Country, l.CountryLong,
 		l.CountryCode)
