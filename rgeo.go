@@ -1,3 +1,10 @@
+// Package rgeo is a fast, simple solution for local reverse geocoding
+//
+// Rather than relying on external software or online APIs, rgeo packages all of
+// the data it needs in your binary. This means it will only ever work down to
+// the level of cities (though currently just countries), but if that's all you
+// need then this is the library for you.
+
 package rgeo
 
 import (
@@ -24,17 +31,10 @@ type RGeo struct {
 	dataFile *os.File
 }
 
-const geoDataFN = "ne_110m_admin_0_countries.geojson"
-
 // reverseGeocode returns the country in which the given coordinate is located
 func ReverseGeocode(loc geom.Coord) (Location, error) {
-	geoData, err := Asset(geoDataFN)
-	if err != nil {
-		return Location{}, err
-	}
-
 	var fc geojson.FeatureCollection
-	if err := json.Unmarshal(geoData, &fc); err != nil {
+	if err := json.Unmarshal([]byte(geodata), &fc); err != nil {
 		return Location{}, err
 	}
 
