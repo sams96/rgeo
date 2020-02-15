@@ -3,6 +3,7 @@ package rgeo
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"golang.org/x/net/webdav"
 	"os"
 
@@ -12,22 +13,29 @@ import (
 	"github.com/twpayne/go-geom/encoding/geojson"
 )
 
-var ErrCountryNotFound = errors.Errorf("Country not found")
+var ErrCountryNotFound = errors.Errorf("country not found")
+var ErrCountryLongNotFound = errors.Errorf("country long name not found")
 
 const geoDataPath = "ne_110m_admin_0_countries.geojson"
 
+type Location struct {
+	Country     string
+	CountryLong string
+	CountryCode string
+}
+
 // reverseGeocode returns the country in which the given coordinate is located
-func ReverseGeocode(loc geom.Coord) (string, error) {
+func ReverseGeocode(loc geom.Coord) (Location, error) {
 	var dir webdav.Dir
 	geoData, err := dir.OpenFile(context.Background(), geoDataPath, 0, os.ModeExclusive)
 	if err != nil {
-		return "", err
+		return Location{}, err
 	}
 	defer geoData.Close()
 
 	var fc geojson.FeatureCollection
 	if err := json.NewDecoder(geoData).Decode(&fc); err != nil {
-		return "", err
+		return Location{}, err
 	}
 
 	for _, country := range fc.Features {
@@ -35,35 +43,61 @@ func ReverseGeocode(loc geom.Coord) (string, error) {
 		case *geom.Polygon:
 			in, err := polygonContainsCoord(geo, loc)
 			if err != nil {
-				return "", err
+				return Location{}, err
 			}
 			if in {
-				if name, ok := country.Properties["ADMIN"].(string); ok {
-					return name, nil
-				}
-
-				return "", errors.Errorf("Name not found")
+				return getLocationStrings(country)
 			}
 		case *geom.MultiPolygon:
 			for i := 0; i < geo.NumPolygons(); i++ {
 				in, err := polygonContainsCoord(geo.Polygon(i), loc)
 				if err != nil {
-					return "", err
+					return Location{}, err
 				}
 				if in {
-					if name, ok := country.Properties["ADMIN"].(string); ok {
-						return name, nil
-					}
-
-					return "", errors.Errorf("Name not found")
+					return getLocationStrings(country)
 				}
 			}
 		default:
-			return "", errors.Errorf("Type not known")
+			return Location{}, errors.Errorf("type not known")
 		}
 	}
 
-	return "", ErrCountryNotFound
+	return Location{}, ErrCountryNotFound
+}
+
+// Get the relevant strings from the geojson feature
+func getLocationStrings(f *geojson.Feature) (Location, error) {
+	p := f.Properties
+	var err error
+	country, ok := p["ADMIN"].(string)
+	if !ok {
+		country, ok = p["admin"].(string)
+		if !ok {
+			err = errors.Errorf("country name not found")
+		}
+	}
+
+	countrylong, ok := p["FORMAL_EN"].(string)
+	if !ok {
+		err = ErrCountryLongNotFound
+	}
+
+	countrycode, ok := p["ISO_A3"].(string)
+	if !ok {
+		err = errors.Errorf("country code name not found")
+	}
+
+	return Location{
+		Country:     country,
+		CountryLong: countrylong,
+		CountryCode: countrycode,
+	}, err
+}
+
+func (l Location) String() string {
+	return fmt.Sprintf("<Location> %s, %s, %s", l.Country, l.CountryLong,
+		l.CountryCode)
 }
 
 // polygonContainsCoord checks if a geom.Coord is within a *geom.Polygon
