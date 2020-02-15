@@ -1,7 +1,9 @@
 package rgeo
 
 import (
+	"context"
 	"encoding/json"
+	"golang.org/x/net/webdav"
 	"os"
 
 	"github.com/golang/geo/s2"
@@ -12,11 +14,12 @@ import (
 
 var ErrCountryNotFound = errors.Errorf("Country not found")
 
-const geoDataPath = "ne_50m_admin_0_countries.geojson"
+const geoDataPath = "ne_110m_admin_0_countries.geojson"
 
 // reverseGeocode returns the country in which the given coordinate is located
 func ReverseGeocode(loc geom.Coord) (string, error) {
-	geoData, err := os.Open(geoDataPath)
+	var dir webdav.Dir
+	geoData, err := dir.OpenFile(context.Background(), geoDataPath, 0, os.ModeExclusive)
 	if err != nil {
 		return "", err
 	}

@@ -37,6 +37,24 @@ func TestReverseGeocode(t *testing.T) {
 			expected: "",
 			err:      ErrCountryNotFound,
 		},
+		{
+			name:     "North Pole",
+			in:       []float64{-135, 90},
+			expected: "",
+			err:      ErrCountryNotFound,
+		},
+		{
+			name:     "South Pole",
+			in:       []float64{45, -90},
+			expected: "Antarctica",
+			err:      nil,
+		},
+		{
+			name:     "Alaska",
+			in:       []float64{-150.542, 66.3},
+			expected: "United States of America",
+			err:      nil,
+		},
 	}
 
 	for _, test := range tests {

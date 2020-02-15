@@ -6,4 +6,5 @@ require (
 	github.com/golang/geo v0.0.0-20190916061304-5b978397cfec
 	github.com/pkg/errors v0.9.1
 	github.com/twpayne/go-geom v1.0.5
+	golang.org/x/net v0.0.0-20190404232315-eb5bcb51f2a3
 )
