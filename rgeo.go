@@ -48,27 +48,12 @@ func ReverseGeocode(loc geom.Coord) (Location, error) {
 	}
 
 	for _, country := range fc.Features {
-		switch geo := country.Geometry.(type) {
-		case *geom.Polygon:
-			in, err := polygonContainsCoord(geo, loc)
-			if err != nil {
-				return Location{}, err
-			}
-			if in {
-				return getLocationStrings(country)
-			}
-		case *geom.MultiPolygon:
-			for i := 0; i < geo.NumPolygons(); i++ {
-				in, err := polygonContainsCoord(geo.Polygon(i), loc)
-				if err != nil {
-					return Location{}, err
-				}
-				if in {
-					return getLocationStrings(country)
-				}
-			}
-		default:
-			return Location{}, errors.Errorf("type not known")
+		in, err := geometryContainsCoord(country.Geometry, loc)
+		if err != nil {
+			return Location{}, err
+		}
+		if in {
+			return getLocationStrings(country)
 		}
 	}
 
@@ -110,9 +95,19 @@ func (l Location) String() string {
 		l.CountryCode)
 }
 
-// polygonContainsCoord checks if a geom.Coord is within a *geom.Polygon
-func polygonContainsCoord(geo *geom.Polygon, pt geom.Coord) (bool, error) {
-	polygon, err := polygonFromPolygon(geo)
+// geometryContainsCoord checks if a geom.Coord is within a *geom.T
+func geometryContainsCoord(geo geom.T, pt geom.Coord) (bool, error) {
+	var polygon *s2.Polygon
+	var err error
+
+	switch g := geo.(type) {
+	case *geom.Polygon:
+		polygon, err = polygonFromPolygon(g)
+	case *geom.MultiPolygon:
+		polygon, err = polygonFromMultiPolygon(g)
+	default:
+		return false, errors.Errorf("needs geom.Polygon or geom.MultiPolygon")
+	}
 	if err != nil {
 		return false, err
 	}
@@ -124,10 +119,31 @@ func polygonContainsCoord(geo *geom.Polygon, pt geom.Coord) (bool, error) {
 	return false, nil
 }
 
+// Converts a `*geom.MultiPolygon` to an `*s2.Polygon`
+func polygonFromMultiPolygon(p *geom.MultiPolygon) (*s2.Polygon, error) {
+	var loops []*s2.Loop
+	for i := 0; i < p.NumPolygons(); i++ {
+		this, err := loopSliceFromPolygon(p.Polygon(i))
+		if err != nil {
+			return nil, err
+		}
+
+		loops = append(loops, this...)
+	}
+
+	return s2.PolygonFromLoops(loops), nil
+}
+
 // Converts a `*geom.Polygon` to an `*s2.Polygon`
+func polygonFromPolygon(p *geom.Polygon) (*s2.Polygon, error) {
+	loops, err := loopSliceFromPolygon(p)
+	return s2.PolygonFromLoops(loops), err
+}
+
+// Converts a `*geom.Polygon` to slice of `*s2.Loop`
 //
 // Modified from types.loopFromPolygon from github.com/dgraph-io/dgraph
-func polygonFromPolygon(p *geom.Polygon) (*s2.Polygon, error) {
+func loopSliceFromPolygon(p *geom.Polygon) ([]*s2.Loop, error) {
 	var loops []*s2.Loop
 	for i := 0; i < p.NumLinearRings(); i++ {
 		r := p.LinearRing(i)
@@ -158,7 +174,7 @@ func polygonFromPolygon(p *geom.Polygon) (*s2.Polygon, error) {
 		loops = append(loops, l)
 	}
 
-	return s2.PolygonFromLoops(loops), nil
+	return loops, nil
 }
 
 // Checks if a ring is clockwise or counter-clockwise. Note: This uses the
