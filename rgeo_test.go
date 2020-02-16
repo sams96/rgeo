@@ -138,9 +138,17 @@ func ExampleReverseGeocode() {
 
 	fmt.Printf("%s\n", loc.Country)
 	fmt.Printf("%s\n", loc.CountryLong)
+	fmt.Printf("%s\n", loc.CountryCode2)
 	fmt.Printf("%s\n", loc.CountryCode3)
+	fmt.Printf("%s\n", loc.Continent)
+	fmt.Printf("%s\n", loc.Region)
+	fmt.Printf("%s\n", loc.SubRegion)
 
 	// Output: United Kingdom
 	// United Kingdom of Great Britain and Northern Ireland
+	// GB
 	// GBR
+	// Europe
+	// Europe
+	// Northern Europe
 }
