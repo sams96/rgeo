@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/go-test/deep"
 	geom "github.com/twpayne/go-geom"
 )
 
@@ -19,9 +20,13 @@ func TestReverseGeocode(t *testing.T) {
 			in:   []float64{1.880273, 31.787305},
 			err:  nil,
 			expected: Location{
-				Country:     "Algeria",
-				CountryLong: "People's Democratic Republic of Algeria",
-				CountryCode: "DZA",
+				Country:      "Algeria",
+				CountryLong:  "People's Democratic Republic of Algeria",
+				CountryCode2: "DZ",
+				CountryCode3: "DZA",
+				Continent:    "Africa",
+				Region:       "Africa",
+				SubRegion:    "Northern Africa",
 			},
 		},
 		{
@@ -29,9 +34,13 @@ func TestReverseGeocode(t *testing.T) {
 			in:   []float64{47.478275, -17.530126},
 			err:  nil,
 			expected: Location{
-				Country:     "Madagascar",
-				CountryLong: "Republic of Madagascar",
-				CountryCode: "MDG",
+				Country:      "Madagascar",
+				CountryLong:  "Republic of Madagascar",
+				CountryCode2: "MG",
+				CountryCode3: "MDG",
+				Continent:    "Africa",
+				Region:       "Africa",
+				SubRegion:    "Eastern Africa",
 			},
 		},
 		{
@@ -39,9 +48,13 @@ func TestReverseGeocode(t *testing.T) {
 			in:   []float64{29.832875, -19.948725},
 			err:  nil,
 			expected: Location{
-				Country:     "Zimbabwe",
-				CountryLong: "Republic of Zimbabwe",
-				CountryCode: "ZWE",
+				Country:      "Zimbabwe",
+				CountryLong:  "Republic of Zimbabwe",
+				CountryCode2: "ZW",
+				CountryCode3: "ZWE",
+				Continent:    "Africa",
+				Region:       "Africa",
+				SubRegion:    "Eastern Africa",
 			},
 		},
 		{
@@ -61,9 +74,13 @@ func TestReverseGeocode(t *testing.T) {
 			in:   []float64{45, -90},
 			err:  errCountryLongNotFound,
 			expected: Location{
-				Country:     "Antarctica",
-				CountryLong: "",
-				CountryCode: "ATA",
+				Country:      "Antarctica",
+				CountryLong:  "",
+				CountryCode2: "AQ",
+				CountryCode3: "ATA",
+				Continent:    "Antarctica",
+				Region:       "Antarctica",
+				SubRegion:    "Antarctica",
 			},
 		},
 		{
@@ -71,9 +88,13 @@ func TestReverseGeocode(t *testing.T) {
 			in:   []float64{-150.542, 66.3},
 			err:  nil,
 			expected: Location{
-				Country:     "United States of America",
-				CountryLong: "United States of America",
-				CountryCode: "USA",
+				Country:      "United States of America",
+				CountryLong:  "United States of America",
+				CountryCode2: "US",
+				CountryCode3: "USA",
+				Continent:    "North America",
+				Region:       "Americas",
+				SubRegion:    "Northern America",
 			},
 		},
 		{
@@ -81,9 +102,13 @@ func TestReverseGeocode(t *testing.T) {
 			in:   []float64{0, 52},
 			err:  nil,
 			expected: Location{
-				Country:     "United Kingdom",
-				CountryLong: "United Kingdom of Great Britain and Northern Ireland",
-				CountryCode: "GBR",
+				Country:      "United Kingdom",
+				CountryLong:  "United Kingdom of Great Britain and Northern Ireland",
+				CountryCode2: "GB",
+				CountryCode3: "GBR",
+				Continent:    "Europe",
+				Region:       "Europe",
+				SubRegion:    "Northern Europe",
 			},
 		},
 	}
@@ -96,8 +121,8 @@ func TestReverseGeocode(t *testing.T) {
 				t.Logf("expected error: %s\n got: %s\n", test.err, err)
 				t.Fail()
 			}
-			if result != test.expected {
-				t.Logf("expected: %s\ngot: %s\n", test.expected, result)
+			if diff := deep.Equal(test.expected, result); diff != nil {
+				t.Error(diff)
 				t.Fail()
 			}
 		})
@@ -113,7 +138,7 @@ func ExampleReverseGeocode() {
 
 	fmt.Printf("%s\n", loc.Country)
 	fmt.Printf("%s\n", loc.CountryLong)
-	fmt.Printf("%s\n", loc.CountryCode)
+	fmt.Printf("%s\n", loc.CountryCode3)
 
 	// Output: United Kingdom
 	// United Kingdom of Great Britain and Northern Ireland

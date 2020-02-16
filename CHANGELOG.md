@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+ - Moved to using s2 Polygons instead of just s2 Loops
+ - Added 2 letter country codes, continents, regions and subregions to output
+ - Using github.com/go-test/deep for nicer printing in tests
+
 ## [0.0.1] - 2020-02-15
 
 ### Added

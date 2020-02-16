@@ -31,9 +31,19 @@ var errCountryNotFound = errors.Errorf("country not found")
 var errCountryLongNotFound = errors.Errorf("country long name not found")
 
 type Location struct {
-	Country     string
+	// Commonly used country name
+	Country string
+
+	// Formal name of country
 	CountryLong string
-	CountryCode string
+
+	// Two and three letter ISO 3166 codes
+	CountryCode2 string
+	CountryCode3 string
+
+	Continent string
+	Region    string
+	SubRegion string
 }
 
 // reverseGeocode returns the country in which the given coordinate is located
@@ -77,22 +87,46 @@ func getLocationStrings(f *geojson.Feature) (Location, error) {
 		err = errCountryLongNotFound
 	}
 
-	countrycode, ok := p["ISO_A3"].(string)
+	countrycode2, ok := p["ISO_A2"].(string)
 	if !ok {
-		err = errors.Errorf("country code name not found")
+		err = errors.Errorf("country code 2 not found")
+	}
+
+	countrycode3, ok := p["ISO_A3"].(string)
+	if !ok {
+		err = errors.Errorf("country code 3 not found")
+	}
+
+	continent, ok := p["CONTINENT"].(string)
+	if !ok {
+		err = errors.Errorf("continent not found")
+	}
+
+	region, ok := p["REGION_UN"].(string)
+	if !ok {
+		err = errors.Errorf("region not found")
+	}
+
+	subregion, ok := p["SUBREGION"].(string)
+	if !ok {
+		err = errors.Errorf("subregion not found")
 	}
 
 	return Location{
-		Country:     country,
-		CountryLong: countrylong,
-		CountryCode: countrycode,
+		Country:      country,
+		CountryLong:  countrylong,
+		CountryCode2: countrycode2,
+		CountryCode3: countrycode3,
+		Continent:    continent,
+		Region:       region,
+		SubRegion:    subregion,
 	}, err
 }
 
 // String method for type `Location`
 func (l Location) String() string {
 	return fmt.Sprintf("<Location> %s, %s, %s", l.Country, l.CountryLong,
-		l.CountryCode)
+		l.CountryCode3)
 }
 
 // geometryContainsCoord checks if a geom.Coord is within a *geom.T
