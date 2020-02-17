@@ -151,6 +151,22 @@ func TestString(t *testing.T) {
 			},
 			expected: "<Location> Algeria (DZA), Africa",
 		},
+		{
+			name: "Zimbabwe",
+			in: Location{
+				CountryLong:  "Republic of Zimbabwe",
+				CountryCode2: "ZW",
+				Region:       "Africa",
+			},
+			expected: "<Location> Republic of Zimbabwe (ZW), Africa",
+		},
+		{
+			name: "Northern America",
+			in: Location{
+				SubRegion: "Northern America",
+			},
+			expected: "<Location> Northern America",
+		},
 	}
 
 	for _, test := range tests {

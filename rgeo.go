@@ -21,7 +21,6 @@ package rgeo
 
 import (
 	"encoding/json"
-	"fmt"
 
 	"github.com/golang/geo/s2"
 	"github.com/pkg/errors"
@@ -171,9 +170,37 @@ func getLocationStrings(p map[string]interface{}) Location {
 }
 
 // String method for type `Location`
-func (l Location) String() string {
-	return fmt.Sprintf("<Location> %s (%s), %s", l.Country, l.CountryCode3,
-		l.Continent)
+func (l Location) String() (ret string) {
+	// TODO: Add special case for empty Location
+	ret = "<Location>"
+
+	// Add country name
+	if l.Country != "" {
+		ret += " " + l.Country
+	} else if l.CountryLong != "" {
+		ret += " " + l.CountryLong
+	}
+
+	// Add country code in brackets
+	if l.CountryCode3 != "" {
+		ret += " (" + l.CountryCode3 + ")"
+	} else if l.CountryCode2 != "" {
+		ret += " (" + l.CountryCode2 + ")"
+	}
+
+	// Add continent/region
+	if len(ret) > len("<Location>") {
+		ret += ","
+	}
+	if l.Continent != "" {
+		ret += " " + l.Continent
+	} else if l.Region != "" {
+		ret += " " + l.Region
+	} else if l.SubRegion != "" {
+		ret += " " + l.SubRegion
+	}
+
+	return
 }
 
 // geometryContainsCoord checks if a geom.Coord is within a *geom.T

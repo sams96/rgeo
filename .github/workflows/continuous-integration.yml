@@ -1,7 +1,7 @@
 on:
   pull_request:
   push:
-name: test
+name: continuous-integration
 jobs:
   ubuntu:
     runs-on: ubuntu-latest
