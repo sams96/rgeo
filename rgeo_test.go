@@ -72,7 +72,7 @@ func TestReverseGeocode(t *testing.T) {
 		{
 			name: "South Pole",
 			in:   []float64{45, -90},
-			err:  errCountryLongNotFound,
+			err:  nil,
 			expected: Location{
 				Country:      "Antarctica",
 				CountryLong:  "",
@@ -113,10 +113,15 @@ func TestReverseGeocode(t *testing.T) {
 		},
 	}
 
+	rgeo, err := New()
+	if err != nil {
+		t.Error(err)
+	}
+
 	for _, test := range tests {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
-			result, err := ReverseGeocode(test.in)
+			result, err := rgeo.ReverseGeocode(test.in)
 			if err != test.err {
 				t.Logf("expected error: %s\n got: %s\n", test.err, err)
 				t.Fail()
@@ -179,4 +184,24 @@ func ExampleReverseGeocode() {
 	// Europe
 	// Europe
 	// Northern Europe
+}
+
+func ExampleReverseGeocode_with_Rgeo() {
+	r, err := New()
+	if err != nil {
+		// Handle error
+	}
+
+	for i := -33; i <= 31; i += 5 {
+		loc, err := r.ReverseGeocode([]float64{24, float64(i)})
+		if err != nil {
+			// Handle error
+		}
+
+		fmt.Printf("%s, ", loc.CountryCode2)
+	}
+
+	fmt.Printf("\n")
+
+	// Output: ZA, ZA, BW, NA, ZM, CD, CD, CD, CF, SD, SD, LY, LY,
 }

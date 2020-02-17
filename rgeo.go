@@ -1,21 +1,21 @@
 /*
-	Package rgeo is a fast, simple solution for local reverse geocoding
+Package rgeo is a fast, simple solution for local reverse geocoding
 
-	Rather than relying on external software or online APIs, rgeo packages all
-	of the data it needs in your binary. This means it will only ever work down
-	to the level of cities (though currently just countries), but if that's all
-	you need then this is the library for you.
+Rather than relying on external software or online APIs, rgeo packages all of
+the data it needs in your binary. This means it will only ever work down to the
+level of cities (though currently just countries), but if that's all you need
+then this is the library for you.
 
-	rgeo uses data from https://naturalearthdata.com.
+rgeo uses data from https://naturalearthdata.com.
 
-	Installation
+Installation
 
-		go get github.com/sams96/rgeo
+	go get github.com/sams96/rgeo
 
-	Contributing
+Contributing
 
-	Contributions are welcome, I haven't got any guidelines or anything so maybe
-	just make an issue first.
+Contributions are welcome, I haven't got any guidelines or anything so maybe
+just make an issue first.
 */
 package rgeo
 
@@ -49,70 +49,114 @@ type Location struct {
 	SubRegion string
 }
 
+// country hold the polygon and Location for one country
+type country struct {
+	poly *s2.Polygon
+	loc  Location
+}
+
+// Rgeo is the type used to hold pre-created polygons for reverse geocoding
+type Rgeo struct {
+	countries []country
+}
+
+// New parses the data and creates the polygons, returning them as a type Rgeo,
+// this will reduce the work needed each time ReverseGeocode is run
+func New() (Rgeo, error) {
+	var fc geojson.FeatureCollection
+	if err := json.Unmarshal([]byte(geodata), &fc); err != nil {
+		return Rgeo{}, err
+	}
+
+	var rgeo Rgeo
+	var thisCountry country
+	var err error
+	for _, c := range fc.Features {
+		thisCountry.poly, err = polygonFromGeometry(c.Geometry)
+		if err != nil {
+			return Rgeo{}, err
+		}
+
+		thisCountry.loc = getLocationStrings(c.Properties)
+
+		rgeo.countries = append(rgeo.countries, thisCountry)
+	}
+
+	return rgeo, nil
+}
+
 // ReverseGeocode returns the country in which the given coordinate is located
 //
 // The input is a `geom.Coord`, which is just a `[]float64` with the longitude
 // in the zeroth position and the latitude in the first position.
 // (i.e. `[]float64{lon, lat}`)
+//
+// When run without a type Rgeo it re-creates the polygons every time
 func ReverseGeocode(loc geom.Coord) (Location, error) {
-	var fc geojson.FeatureCollection
-	if err := json.Unmarshal([]byte(geodata), &fc); err != nil {
+	rgeo, err := New()
+	if err != nil {
 		return Location{}, err
 	}
 
-	for _, country := range fc.Features {
-		in, err := geometryContainsCoord(country.Geometry, loc)
-		if err != nil {
-			return Location{}, err
-		}
-		if in {
-			return getLocationStrings(country)
+	return rgeo.ReverseGeocode(loc)
+}
+
+// ReverseGeocode returns the country in which the given coordinate is located
+//
+// The input is a `geom.Coord`, which is just a `[]float64` with the longitude
+// in the zeroth position and the latitude in the first position.
+// (i.e. `[]float64{lon, lat}`)
+//
+// When run on a type Rgeo it uses the pre-created polygons instead of
+// calculating them every time
+func (r *Rgeo) ReverseGeocode(loc geom.Coord) (Location, error) {
+	for _, country := range r.countries {
+		if in := polygonContainsCoord(country.poly, loc); in {
+			return country.loc, nil
 		}
 	}
 
 	return Location{}, errCountryNotFound
 }
 
-// Get the relevant strings from the geojson feature
-func getLocationStrings(f *geojson.Feature) (Location, error) {
-	p := f.Properties
-	var err error
+// Get the relevant strings from the geojson properties
+func getLocationStrings(p map[string]interface{}) Location {
 	country, ok := p["ADMIN"].(string)
 	if !ok {
 		country, ok = p["admin"].(string)
 		if !ok {
-			err = errors.Errorf("country name not found")
+			country = ""
 		}
 	}
 
 	countrylong, ok := p["FORMAL_EN"].(string)
 	if !ok {
-		err = errCountryLongNotFound
+		countrylong = ""
 	}
 
 	countrycode2, ok := p["ISO_A2"].(string)
 	if !ok {
-		err = errors.Errorf("country code 2 not found")
+		countrycode2 = ""
 	}
 
 	countrycode3, ok := p["ISO_A3"].(string)
 	if !ok {
-		err = errors.Errorf("country code 3 not found")
+		countrycode3 = ""
 	}
 
 	continent, ok := p["CONTINENT"].(string)
 	if !ok {
-		err = errors.Errorf("continent not found")
+		continent = ""
 	}
 
 	region, ok := p["REGION_UN"].(string)
 	if !ok {
-		err = errors.Errorf("region not found")
+		region = ""
 	}
 
 	subregion, ok := p["SUBREGION"].(string)
 	if !ok {
-		err = errors.Errorf("subregion not found")
+		subregion = ""
 	}
 
 	return Location{
@@ -123,7 +167,7 @@ func getLocationStrings(f *geojson.Feature) (Location, error) {
 		Continent:    continent,
 		Region:       region,
 		SubRegion:    subregion,
-	}, err
+	}
 }
 
 // String method for type `Location`
@@ -134,26 +178,37 @@ func (l Location) String() string {
 
 // geometryContainsCoord checks if a geom.Coord is within a *geom.T
 func geometryContainsCoord(geo geom.T, pt geom.Coord) (bool, error) {
-	var polygon *s2.Polygon
-	var err error
-
-	switch g := geo.(type) {
-	case *geom.Polygon:
-		polygon, err = polygonFromPolygon(g)
-	case *geom.MultiPolygon:
-		polygon, err = polygonFromMultiPolygon(g)
-	default:
-		return false, errors.Errorf("needs geom.Polygon or geom.MultiPolygon")
-	}
+	polygon, err := polygonFromGeometry(geo)
 	if err != nil {
 		return false, err
 	}
 
-	if polygon.ContainsPoint(pointFromCoord(pt)) {
-		return true, nil
+	return polygonContainsCoord(polygon, pt), nil
+}
+
+// polygonContainsCoord checks if the given coord is within the given polygon
+func polygonContainsCoord(p *s2.Polygon, pt geom.Coord) bool {
+	return p.ContainsPoint(pointFromCoord(pt))
+}
+
+// polygonFromGeometry converts a geom.T to an s2.Polygon
+func polygonFromGeometry(g geom.T) (*s2.Polygon, error) {
+	var polygon *s2.Polygon
+	var err error
+
+	switch t := g.(type) {
+	case *geom.Polygon:
+		polygon, err = polygonFromPolygon(t)
+	case *geom.MultiPolygon:
+		polygon, err = polygonFromMultiPolygon(t)
+	default:
+		return nil, errors.Errorf("needs geom.Polygon or geom.MultiPolygon")
+	}
+	if err != nil {
+		return nil, err
 	}
 
-	return false, nil
+	return polygon, nil
 }
 
 // Converts a `*geom.MultiPolygon` to an `*s2.Polygon`
