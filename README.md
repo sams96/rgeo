@@ -7,6 +7,8 @@ the data it needs in your binary. This means it will only ever work down to the
 level of cities (though currently just countries), but if that's all you need
 then this is the library for you.
 
+rgeo uses data from [naturalearthdata.com](https://naturalearthdata.com).
+
 ## Installation
 
     go get github.com/sams96/rgeo
@@ -14,7 +16,7 @@ then this is the library for you.
 ## Usage
 
 ```go
-loc, err := ReverseGeocode([]float64{0, 52})
+loc, err := rgeo.ReverseGeocode([]float64{0, 52})
 if err != nil {
 	// Handle error
 }

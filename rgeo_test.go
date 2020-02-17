@@ -130,6 +130,34 @@ func TestReverseGeocode(t *testing.T) {
 
 }
 
+func TestString(t *testing.T) {
+	tests := []struct {
+		name     string
+		in       Location
+		expected string
+	}{
+		{
+			name: "Algeria",
+			in: Location{
+				Country:      "Algeria",
+				CountryCode3: "DZA",
+				Continent:    "Africa",
+			},
+			expected: "<Location> Algeria (DZA), Africa",
+		},
+	}
+
+	for _, test := range tests {
+		test := test
+		t.Run(test.name, func(t *testing.T) {
+			result := fmt.Sprintf("%s", test.in)
+			if diff := deep.Equal(test.expected, result); diff != nil {
+				t.Error(diff)
+			}
+		})
+	}
+}
+
 func ExampleReverseGeocode() {
 	loc, err := ReverseGeocode([]float64{0, 52})
 	if err != nil {

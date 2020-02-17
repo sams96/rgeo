@@ -6,9 +6,11 @@
 	to the level of cities (though currently just countries), but if that's all
 	you need then this is the library for you.
 
+	rgeo uses data from https://naturalearthdata.com.
+
 	Installation
 
-	    go get github.com/sams96/rgeo
+		go get github.com/sams96/rgeo
 
 	Contributing
 
@@ -30,6 +32,7 @@ import (
 var errCountryNotFound = errors.Errorf("country not found")
 var errCountryLongNotFound = errors.Errorf("country long name not found")
 
+// Location is the return type for ReverseGeocode
 type Location struct {
 	// Commonly used country name
 	Country string
@@ -46,7 +49,7 @@ type Location struct {
 	SubRegion string
 }
 
-// reverseGeocode returns the country in which the given coordinate is located
+// ReverseGeocode returns the country in which the given coordinate is located
 //
 // The input is a `geom.Coord`, which is just a `[]float64` with the longitude
 // in the zeroth position and the latitude in the first position.
@@ -125,8 +128,8 @@ func getLocationStrings(f *geojson.Feature) (Location, error) {
 
 // String method for type `Location`
 func (l Location) String() string {
-	return fmt.Sprintf("<Location> %s, %s, %s", l.Country, l.CountryLong,
-		l.CountryCode3)
+	return fmt.Sprintf("<Location> %s (%s), %s", l.Country, l.CountryCode3,
+		l.Continent)
 }
 
 // geometryContainsCoord checks if a geom.Coord is within a *geom.T
