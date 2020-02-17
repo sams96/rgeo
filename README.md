@@ -1,4 +1,4 @@
-# rgeo
+# rgeo ![](https://img.shields.io/github/workflow/status/sams96/rgeo/test?style=flat-square) [![go.dev reference](https://img.shields.io/badge/go.dev-reference-007d9c?logo=go&logoColor=white&style=flat-square)](https://pkg.go.dev/github.com/sams96/rgeo) ![](https://goreportcard.com/badge/github.com/sams96/rgeo?style=flat-square)
 
 Package rgeo is a fast, simple solution for local reverse geocoding
 
