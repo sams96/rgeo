@@ -2,6 +2,7 @@ package rgeo
 
 import (
 	"fmt"
+	"math/rand"
 	"testing"
 
 	"github.com/go-test/deep"
@@ -204,4 +205,23 @@ func ExampleReverseGeocode_with_Rgeo() {
 	fmt.Printf("\n")
 
 	// Output: ZA, ZA, BW, NA, ZM, CD, CD, CD, CF, SD, SD, LY, LY,
+}
+
+func BenchmarkReverseGeocode(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		_, _ = ReverseGeocode([]float64{
+			(rand.Float64() * 360) - 180,
+			(rand.Float64() * 180) - 90,
+		})
+	}
+}
+
+func BenchmarkReverseGeocode_with_Rgeo(b *testing.B) {
+	r, _ := New()
+	for i := 0; i < b.N; i++ {
+		_, _ = r.ReverseGeocode([]float64{
+			(rand.Float64() * 360) - 180,
+			(rand.Float64() * 180) - 90,
+		})
+	}
 }
