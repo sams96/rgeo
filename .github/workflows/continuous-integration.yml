@@ -1,0 +1,67 @@
+on:
+  pull_request:
+  push:
+name: test
+jobs:
+  ubuntu:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Set up Go 1.13
+      uses: actions/setup-go@v1
+      with:
+        go-version: 1.13.x
+      id: go
+
+    - name: Check out code into the Go module directory
+      uses: actions/checkout@v2
+
+    - name: Get dependencies
+      run: go mod download
+
+    - name: Build
+      run: go build
+
+    - name: Test
+      run: go test
+
+  macOS:
+    runs-on: macos-latest
+    steps:
+    - name: Set up Go 1.13
+      uses: actions/setup-go@v1
+      with:
+        go-version: 1.13.x
+      id: go
+
+    - name: Check out code into the Go module directory
+      uses: actions/checkout@v2
+
+    - name: Get dependencies
+      run: go mod download
+
+    - name: Build
+      run: go build
+
+    - name: Test
+      run: go test
+
+  windows:
+    runs-on: windows-latest
+    steps:
+    - name: Set up Go 1.13
+      uses: actions/setup-go@v1
+      with:
+        go-version: 1.13.x
+      id: go
+
+    - name: Check out code into the Go module directory
+      uses: actions/checkout@v2
+
+    - name: Get dependencies
+      run: go mod download
+
+    - name: Build
+      run: go build
+
+    - name: Test
+      run: go test
