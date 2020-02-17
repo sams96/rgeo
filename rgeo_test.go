@@ -133,7 +133,6 @@ func TestReverseGeocode(t *testing.T) {
 			}
 		})
 	}
-
 }
 
 func TestString(t *testing.T) {
@@ -172,7 +171,7 @@ func TestString(t *testing.T) {
 	for _, test := range tests {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
-			result := fmt.Sprintf("%s", test.in)
+			result := test.in.String()
 			if diff := deep.Equal(test.expected, result); diff != nil {
 				t.Error(diff)
 			}
@@ -203,7 +202,7 @@ func ExampleReverseGeocode() {
 	// Northern Europe
 }
 
-func ExampleReverseGeocode_with_Rgeo() {
+func ExampleReverseGeocode_with_rgeo() {
 	r, err := New()
 	if err != nil {
 		// Handle error

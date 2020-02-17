@@ -29,7 +29,6 @@ import (
 )
 
 var errCountryNotFound = errors.Errorf("country not found")
-var errCountryLongNotFound = errors.Errorf("country long name not found")
 
 // Location is the return type for ReverseGeocode
 type Location struct {
@@ -67,9 +66,12 @@ func New() (Rgeo, error) {
 		return Rgeo{}, err
 	}
 
-	var rgeo Rgeo
-	var thisCountry country
-	var err error
+	var (
+		rgeo        Rgeo
+		thisCountry country
+		err         error
+	)
+
 	for _, c := range fc.Features {
 		thisCountry.poly, err = polygonFromGeometry(c.Geometry)
 		if err != nil {
@@ -170,9 +172,9 @@ func getLocationStrings(p map[string]interface{}) Location {
 }
 
 // String method for type `Location`
-func (l Location) String() (ret string) {
+func (l Location) String() string {
 	// TODO: Add special case for empty Location
-	ret = "<Location>"
+	ret := "<Location>"
 
 	// Add country name
 	if l.Country != "" {
@@ -192,25 +194,17 @@ func (l Location) String() (ret string) {
 	if len(ret) > len("<Location>") {
 		ret += ","
 	}
-	if l.Continent != "" {
+
+	switch {
+	case l.Continent != "":
 		ret += " " + l.Continent
-	} else if l.Region != "" {
+	case l.Region != "":
 		ret += " " + l.Region
-	} else if l.SubRegion != "" {
+	case l.SubRegion != "":
 		ret += " " + l.SubRegion
 	}
 
-	return
-}
-
-// geometryContainsCoord checks if a geom.Coord is within a *geom.T
-func geometryContainsCoord(geo geom.T, pt geom.Coord) (bool, error) {
-	polygon, err := polygonFromGeometry(geo)
-	if err != nil {
-		return false, err
-	}
-
-	return polygonContainsCoord(polygon, pt), nil
+	return ret
 }
 
 // polygonContainsCoord checks if the given coord is within the given polygon
@@ -220,8 +214,10 @@ func polygonContainsCoord(p *s2.Polygon, pt geom.Coord) bool {
 
 // polygonFromGeometry converts a geom.T to an s2.Polygon
 func polygonFromGeometry(g geom.T) (*s2.Polygon, error) {
-	var polygon *s2.Polygon
-	var err error
+	var (
+		polygon *s2.Polygon
+		err     error
+	)
 
 	switch t := g.(type) {
 	case *geom.Polygon:
@@ -231,6 +227,7 @@ func polygonFromGeometry(g geom.T) (*s2.Polygon, error) {
 	default:
 		return nil, errors.Errorf("needs geom.Polygon or geom.MultiPolygon")
 	}
+
 	if err != nil {
 		return nil, err
 	}
@@ -241,6 +238,7 @@ func polygonFromGeometry(g geom.T) (*s2.Polygon, error) {
 // Converts a `*geom.MultiPolygon` to an `*s2.Polygon`
 func polygonFromMultiPolygon(p *geom.MultiPolygon) (*s2.Polygon, error) {
 	var loops []*s2.Loop
+
 	for i := 0; i < p.NumPolygons(); i++ {
 		this, err := loopSliceFromPolygon(p.Polygon(i))
 		if err != nil {
@@ -267,9 +265,11 @@ func loopSliceFromPolygon(p *geom.Polygon) ([]*s2.Loop, error) {
 	for i := 0; i < p.NumLinearRings(); i++ {
 		r := p.LinearRing(i)
 		n := r.NumCoords()
+
 		if n < 4 {
 			return nil, errors.Errorf("Can't convert ring with less than 4 pts")
 		}
+
 		if !r.Coord(0).Equal(geom.XY, r.Coord(n-1)) {
 			return nil, errors.Errorf(
 				"Last coordinate not same as first for polygon: %+v\n", p)
@@ -307,11 +307,13 @@ func isClockwise(r *geom.LinearRing) bool {
 	// https://en.wikipedia.org/wiki/Shoelace_formula
 	var a float64
 	n := r.NumCoords()
+
 	for i := 0; i < n; i++ {
 		p1 := r.Coord(i)
 		p2 := r.Coord((i + 1) % n)
 		a += (p2.X() - p1.X()) * (p1.Y() + p2.Y())
 	}
+
 	return a > 0
 }
 
@@ -322,6 +324,7 @@ func loopFromRing(r *geom.LinearRing, reverse bool) *s2.Loop {
 	// closed, so we skip the last point.
 	n := r.NumCoords()
 	pts := make([]s2.Point, n-1)
+
 	for i := 0; i < n-1; i++ {
 		var c geom.Coord
 		if reverse {
@@ -329,9 +332,11 @@ func loopFromRing(r *geom.LinearRing, reverse bool) *s2.Loop {
 		} else {
 			c = r.Coord(i)
 		}
+
 		p := pointFromCoord(c)
 		pts[i] = p
 	}
+
 	return s2.LoopFromPoints(pts)
 }
 
