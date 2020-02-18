@@ -72,7 +72,7 @@ func TestReverseGeocode(t *testing.T) {
 		},
 		{
 			name: "South Pole",
-			in:   []float64{45, -90},
+			in:   []float64{44.99, -89.99},
 			err:  nil,
 			expected: Location{
 				Country:      "Antarctica",
@@ -124,12 +124,10 @@ func TestReverseGeocode(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			result, err := rgeo.ReverseGeocode(test.in)
 			if err != test.err {
-				t.Logf("expected error: %s\n got: %s\n", test.err, err)
-				t.Fail()
+				t.Errorf("expected error: %s\n got: %s\n", test.err, err)
 			}
 			if diff := deep.Equal(test.expected, result); diff != nil {
 				t.Error(diff)
-				t.Fail()
 			}
 		})
 	}
@@ -231,7 +229,7 @@ func BenchmarkReverseGeocode(b *testing.B) {
 	}
 }
 
-func BenchmarkReverseGeocode_with_Rgeo(b *testing.B) {
+func BenchmarkReverseGeocode_with_rgeo(b *testing.B) {
 	r, _ := New()
 	for i := 0; i < b.N; i++ {
 		_, _ = r.ReverseGeocode([]float64{

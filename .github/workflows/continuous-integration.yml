@@ -22,7 +22,7 @@ jobs:
       run: go build
 
     - name: Test
-      run: go test -coverprofile cover.out
+      run: go test
 
   macOS:
     runs-on: macos-latest

@@ -262,6 +262,7 @@ func polygonFromPolygon(p *geom.Polygon) (*s2.Polygon, error) {
 // Modified from types.loopFromPolygon from github.com/dgraph-io/dgraph
 func loopSliceFromPolygon(p *geom.Polygon) ([]*s2.Loop, error) {
 	var loops []*s2.Loop
+
 	for i := 0; i < p.NumLinearRings(); i++ {
 		r := p.LinearRing(i)
 		n := r.NumCoords()
@@ -306,6 +307,7 @@ func isClockwise(r *geom.LinearRing) bool {
 	// The algorithm is described here
 	// https://en.wikipedia.org/wiki/Shoelace_formula
 	var a float64
+
 	n := r.NumCoords()
 
 	for i := 0; i < n; i++ {
@@ -333,8 +335,7 @@ func loopFromRing(r *geom.LinearRing, reverse bool) *s2.Loop {
 			c = r.Coord(i)
 		}
 
-		p := pointFromCoord(c)
-		pts[i] = p
+		pts[i] = pointFromCoord(c)
 	}
 
 	return s2.LoopFromPoints(pts)
