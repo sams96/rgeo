@@ -1,3 +1,13 @@
+/*
+This is an experimental attempt at rewriting the geojson as go code so it
+doesn't need to be pased every time. The main issues encountered were large
+executables and very slow builds, the latter of which I think is due to having
+to run a lot of s2 code to create the s2 polygons (because I can't access all of
+the information in the structs so it has to re build them every time). However
+once built it runs faster than previous methods.
+
+Yes it is very ugly code, but I wrote it at 2am.
+*/
 package main
 
 import (
@@ -31,8 +41,10 @@ func main() {
 
 	w := bufio.NewWriter(outfile)
 
+	// Write package header
 	_, err = fmt.Fprintf(w, "package rgeo\n\n")
-	_, err = fmt.Fprintf(w, "import \"github.com/golang/geo/s2\"\n\n")
+	_, err = fmt.Fprintf(w, "import (\n\t\"github.com/golang/geo/s2\"\n")
+	_, err = fmt.Fprintf(w, "\t\"github.com/golang/geo/r3\"\n)\n\n")
 	_, err = fmt.Fprintf(w, "var geodata2 = Rgeo{[]Country{\n") // TODO change var name
 	if err != nil {
 		panic(err)
@@ -71,7 +83,7 @@ func main() {
 				panic(err)
 			}
 			for _, v := range l.Vertices() {
-				_, err = fmt.Fprintf(w, "\t\t\t\ts2.PointFromCoords(%f, %f, %f),\n",
+				_, err = fmt.Fprintf(w, "\t\t\t\ts2.Point{r3.Vector{%f, %f, %f}},\n",
 					v.X, v.Y, v.Z)
 				if err != nil {
 					panic("wrong len vertex")

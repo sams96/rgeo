@@ -114,15 +114,17 @@ func TestReverseGeocode(t *testing.T) {
 		},
 	}
 
-	rgeo, err := New()
-	if err != nil {
-		t.Error(err)
-	}
+	/*
+		rgeo, err := New()
+		if err != nil {
+			t.Error(err)
+		}
+	*/
 
 	for _, test := range tests {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
-			result, err := rgeo.ReverseGeocode(test.in)
+			result, err := ReverseGeocode(test.in)
 			if err != test.err {
 				t.Errorf("expected error: %s\n got: %s\n", test.err, err)
 			}

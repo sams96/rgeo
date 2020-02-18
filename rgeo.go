@@ -49,8 +49,8 @@ type Location struct {
 
 // country hold the Polygon and Location for one country
 type Country struct {
-	Poly *s2.Polygon
 	Loc  Location
+	Poly *s2.Polygon
 }
 
 // Rgeo is the type used to hold pre-created polygons for reverse geocoding
