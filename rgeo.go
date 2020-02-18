@@ -88,9 +88,9 @@ func New() (Rgeo, error) {
 
 // ReverseGeocode returns the country in which the given coordinate is located
 //
-// The input is a `geom.Coord`, which is just a `[]float64` with the longitude
+// The input is a geom.Coord, which is just a []float64 with the longitude
 // in the zeroth position and the latitude in the first position.
-// (i.e. `[]float64{lon, lat}`)
+// (i.e. []float64{lon, lat})
 //
 // When run without a type Rgeo it re-creates the polygons every time
 func ReverseGeocode(loc geom.Coord) (Location, error) {
@@ -104,9 +104,9 @@ func ReverseGeocode(loc geom.Coord) (Location, error) {
 
 // ReverseGeocode returns the country in which the given coordinate is located
 //
-// The input is a `geom.Coord`, which is just a `[]float64` with the longitude
+// The input is a geom.Coord`, which is just a []float64 with the longitude
 // in the zeroth position and the latitude in the first position.
-// (i.e. `[]float64{lon, lat}`)
+// (i.e. []float64{lon, lat})
 //
 // When run on a type Rgeo it uses the pre-created polygons instead of
 // calculating them every time
@@ -171,7 +171,7 @@ func getLocationStrings(p map[string]interface{}) Location {
 	}
 }
 
-// String method for type `Location`
+// String method for type Location
 func (l Location) String() string {
 	// TODO: Add special case for empty Location
 	ret := "<Location>"
@@ -235,7 +235,7 @@ func polygonFromGeometry(g geom.T) (*s2.Polygon, error) {
 	return polygon, nil
 }
 
-// Converts a `*geom.MultiPolygon` to an `*s2.Polygon`
+// Converts a *geom.MultiPolygon to an *s2.Polygon
 func polygonFromMultiPolygon(p *geom.MultiPolygon) (*s2.Polygon, error) {
 	var loops []*s2.Loop
 
@@ -251,13 +251,13 @@ func polygonFromMultiPolygon(p *geom.MultiPolygon) (*s2.Polygon, error) {
 	return s2.PolygonFromLoops(loops), nil
 }
 
-// Converts a `*geom.Polygon` to an `*s2.Polygon`
+// Converts a *geom.Polygon to an *s2.Polygon
 func polygonFromPolygon(p *geom.Polygon) (*s2.Polygon, error) {
 	loops, err := loopSliceFromPolygon(p)
 	return s2.PolygonFromLoops(loops), err
 }
 
-// Converts a `*geom.Polygon` to slice of `*s2.Loop`
+// Converts a *geom.Polygon to slice of *s2.Loop
 //
 // Modified from types.loopFromPolygon from github.com/dgraph-io/dgraph
 func loopSliceFromPolygon(p *geom.Polygon) ([]*s2.Loop, error) {
