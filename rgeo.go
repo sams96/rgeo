@@ -47,15 +47,15 @@ type Location struct {
 	SubRegion string
 }
 
-// country hold the polygon and Location for one country
-type country struct {
-	poly *s2.Polygon
-	loc  Location
+// country hold the Polygon and Location for one country
+type Country struct {
+	Poly *s2.Polygon
+	Loc  Location
 }
 
 // Rgeo is the type used to hold pre-created polygons for reverse geocoding
 type Rgeo struct {
-	countries []country
+	Countries []Country
 }
 
 // New parses the data and creates the polygons, returning them as a type Rgeo,
@@ -68,19 +68,19 @@ func New() (Rgeo, error) {
 
 	var (
 		rgeo        Rgeo
-		thisCountry country
+		thisCountry Country
 		err         error
 	)
 
 	for _, c := range fc.Features {
-		thisCountry.poly, err = polygonFromGeometry(c.Geometry)
+		thisCountry.Poly, err = PolygonFromGeometry(c.Geometry)
 		if err != nil {
 			return Rgeo{}, err
 		}
 
-		thisCountry.loc = getLocationStrings(c.Properties)
+		thisCountry.Loc = GetLocationStrings(c.Properties)
 
-		rgeo.countries = append(rgeo.countries, thisCountry)
+		rgeo.Countries = append(rgeo.Countries, thisCountry)
 	}
 
 	return rgeo, nil
@@ -94,12 +94,16 @@ func New() (Rgeo, error) {
 //
 // When run without a type Rgeo it re-creates the polygons every time
 func ReverseGeocode(loc geom.Coord) (Location, error) {
-	rgeo, err := New()
-	if err != nil {
-		return Location{}, err
-	}
+	/*
+		rgeo, err := New()
+		if err != nil {
+			return Location{}, err
+		}
 
-	return rgeo.ReverseGeocode(loc)
+		return rgeo.ReverseGeocode(loc)
+	*/
+
+	return geodata2.ReverseGeocode(loc)
 }
 
 // ReverseGeocode returns the country in which the given coordinate is located
@@ -111,9 +115,9 @@ func ReverseGeocode(loc geom.Coord) (Location, error) {
 // When run on a type Rgeo it uses the pre-created polygons instead of
 // calculating them every time
 func (r *Rgeo) ReverseGeocode(loc geom.Coord) (Location, error) {
-	for _, country := range r.countries {
-		if in := polygonContainsCoord(country.poly, loc); in {
-			return country.loc, nil
+	for _, country := range r.Countries {
+		if in := polygonContainsCoord(country.Poly, loc); in {
+			return country.Loc, nil
 		}
 	}
 
@@ -121,7 +125,7 @@ func (r *Rgeo) ReverseGeocode(loc geom.Coord) (Location, error) {
 }
 
 // Get the relevant strings from the geojson properties
-func getLocationStrings(p map[string]interface{}) Location {
+func GetLocationStrings(p map[string]interface{}) Location {
 	country, ok := p["ADMIN"].(string)
 	if !ok {
 		country, ok = p["admin"].(string)
@@ -212,8 +216,8 @@ func polygonContainsCoord(p *s2.Polygon, pt geom.Coord) bool {
 	return p.ContainsPoint(pointFromCoord(pt))
 }
 
-// polygonFromGeometry converts a geom.T to an s2.Polygon
-func polygonFromGeometry(g geom.T) (*s2.Polygon, error) {
+// PolygonFromGeometry converts a geom.T to an s2.Polygon
+func PolygonFromGeometry(g geom.T) (*s2.Polygon, error) {
 	var (
 		polygon *s2.Polygon
 		err     error
