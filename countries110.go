@@ -1,4 +1,3 @@
-
 // This file is generated
 package rgeo
 
