@@ -112,6 +112,62 @@ func TestReverseGeocode(t *testing.T) {
 				SubRegion:    "Northern Europe",
 			},
 		},
+		{
+			name: "Libya",
+			in:   []float64{24.994611, 25.860750},
+			err:  nil,
+			expected: Location{
+				Country:      "Libya",
+				CountryLong:  "Libya",
+				CountryCode2: "LY",
+				CountryCode3: "LBY",
+				Continent:    "Africa",
+				Region:       "Africa",
+				SubRegion:    "Northern Africa",
+			},
+		},
+		{
+			name: "Egypt",
+			in:   []float64{25.005187, 25.855963},
+			err:  nil,
+			expected: Location{
+				Country:      "Egypt",
+				CountryLong:  "Arab Republic of Egypt",
+				CountryCode2: "EG",
+				CountryCode3: "EGY",
+				Continent:    "Africa",
+				Region:       "Africa",
+				SubRegion:    "Northern Africa",
+			},
+		},
+		{
+			name: "US Border",
+			in:   []float64{-102.560616, 48.998074},
+			err:  nil,
+			expected: Location{
+				Country:      "United States of America",
+				CountryLong:  "United States of America",
+				CountryCode2: "US",
+				CountryCode3: "USA",
+				Continent:    "North America",
+				Region:       "Americas",
+				SubRegion:    "Northern America",
+			},
+		},
+		{
+			name: "Canada Border",
+			in:   []float64{-102.560616, 49.0},
+			err:  nil,
+			expected: Location{
+				Country:      "Canada",
+				CountryLong:  "Canada",
+				CountryCode2: "CA",
+				CountryCode3: "CAN",
+				Continent:    "North America",
+				Region:       "Americas",
+				SubRegion:    "Northern America",
+			},
+		},
 	}
 
 	for _, test := range tests {
