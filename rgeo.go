@@ -20,12 +20,9 @@ just make an issue first.
 package rgeo
 
 import (
-	"encoding/json"
-
 	"github.com/golang/geo/s2"
 	"github.com/pkg/errors"
 	geom "github.com/twpayne/go-geom"
-	"github.com/twpayne/go-geom/encoding/geojson"
 )
 
 var errCountryNotFound = errors.Errorf("country not found")
@@ -48,36 +45,14 @@ type Location struct {
 }
 
 // country hold the Polygon and Location for one country
-type Country struct {
-	Loc  Location
-	Poly geom.T
+type country struct {
+	loc Location
+	geo geom.T
 }
 
-// Rgeo is the type used to hold pre-created polygons for reverse geocoding
-type Rgeo struct {
-	Countries []Country
-}
-
-// New parses the data and creates the polygons, returning them as a type Rgeo,
-// this will reduce the work needed each time ReverseGeocode is run
-func New() (Rgeo, error) {
-	var fc geojson.FeatureCollection
-	if err := json.Unmarshal([]byte(geodata), &fc); err != nil {
-		return Rgeo{}, err
-	}
-
-	var (
-		rgeo        Rgeo
-		thisCountry Country
-	)
-
-	for _, c := range fc.Features {
-		thisCountry.Poly = c.Geometry
-		thisCountry.Loc = GetLocationStrings(c.Properties)
-		rgeo.Countries = append(rgeo.Countries, thisCountry)
-	}
-
-	return rgeo, nil
+// rgeo is the type used to hold pre-created polygons for reverse geocoding
+type rgeo struct {
+	countries []country
 }
 
 // ReverseGeocode returns the country in which the given coordinate is located
@@ -86,16 +61,9 @@ func New() (Rgeo, error) {
 // in the zeroth position and the latitude in the first position.
 // (i.e. `[]float64{lon, lat}`)
 //
-// When run without a type Rgeo it re-creates the polygons every time
+// When run without a type rgeo it re-creates the polygons every time
 func ReverseGeocode(loc geom.Coord) (Location, error) {
-	rgeo, err := New()
-	if err != nil {
-		return Location{}, err
-	}
-
-	return rgeo.ReverseGeocode(loc)
-
-	//return geodata2.ReverseGeocode(loc)
+	return countries110.ReverseGeocode(loc)
 }
 
 // ReverseGeocode returns the country in which the given coordinate is located
@@ -104,72 +72,21 @@ func ReverseGeocode(loc geom.Coord) (Location, error) {
 // in the zeroth position and the latitude in the first position.
 // (i.e. `[]float64{lon, lat}`)
 //
-// When run on a type Rgeo it uses the pre-created polygons instead of
+// When run on a type rgeo it uses the pre-created polygons instead of
 // calculating them every time
-func (r *Rgeo) ReverseGeocode(loc geom.Coord) (Location, error) {
-	for _, country := range r.Countries {
-		poly, err := PolygonFromGeometry(country.Poly)
+func (r *rgeo) ReverseGeocode(loc geom.Coord) (Location, error) {
+	for _, country := range r.countries {
+		poly, err := polygonFromGeometry(country.geo)
 		if err != nil {
 			return Location{}, err
 		}
 
 		if in := polygonContainsCoord(poly, loc); in {
-			return country.Loc, nil
+			return country.loc, nil
 		}
 	}
 
 	return Location{}, errCountryNotFound
-}
-
-// Get the relevant strings from the geojson properties
-func GetLocationStrings(p map[string]interface{}) Location {
-	country, ok := p["ADMIN"].(string)
-	if !ok {
-		country, ok = p["admin"].(string)
-		if !ok {
-			country = ""
-		}
-	}
-
-	countrylong, ok := p["FORMAL_EN"].(string)
-	if !ok {
-		countrylong = ""
-	}
-
-	countrycode2, ok := p["ISO_A2"].(string)
-	if !ok {
-		countrycode2 = ""
-	}
-
-	countrycode3, ok := p["ISO_A3"].(string)
-	if !ok {
-		countrycode3 = ""
-	}
-
-	continent, ok := p["CONTINENT"].(string)
-	if !ok {
-		continent = ""
-	}
-
-	region, ok := p["REGION_UN"].(string)
-	if !ok {
-		region = ""
-	}
-
-	subregion, ok := p["SUBREGION"].(string)
-	if !ok {
-		subregion = ""
-	}
-
-	return Location{
-		Country:      country,
-		CountryLong:  countrylong,
-		CountryCode2: countrycode2,
-		CountryCode3: countrycode3,
-		Continent:    continent,
-		Region:       region,
-		SubRegion:    subregion,
-	}
 }
 
 // String method for type `Location`
@@ -213,8 +130,8 @@ func polygonContainsCoord(p *s2.Polygon, pt geom.Coord) bool {
 	return p.ContainsPoint(pointFromCoord(pt))
 }
 
-// PolygonFromGeometry converts a geom.T to an s2.Polygon
-func PolygonFromGeometry(g geom.T) (*s2.Polygon, error) {
+// polygonFromGeometry converts a geom.T to an s2.Polygon
+func polygonFromGeometry(g geom.T) (*s2.Polygon, error) {
 	var (
 		polygon *s2.Polygon
 		err     error

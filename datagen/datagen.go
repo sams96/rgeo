@@ -1,12 +1,6 @@
 /*
-This is an experimental attempt at rewriting the geojson as go code so it
-doesn't need to be pased every time. The main issues encountered were large
-executables and very slow builds, the latter of which I think is due to having
-to run a lot of s2 code to create the s2 polygons (because I can't access all of
-the information in the structs so it has to re build them every time). However
-once built it runs faster than previous methods.
-
-Yes it is very ugly code, but I wrote it at 2am.
+This program is converts geojson files into go files containing structs that can
+be read by rgeo
 */
 package main
 
@@ -29,9 +23,10 @@ package rgeo
 
 import geom "github.com/twpayne/go-geom"
 
-var geodata2 = Rgeo{[]Country{
-{{range .}}	Country{
-		Loc: Location{
+var {{.Varname}} = rgeo{[]country{
+	{{- range .Countries}}
+	country{
+		loc: Location{
 			Country: "{{.Loc.Country}}",
 			CountryLong: "{{.Loc.CountryLong}}",
 			CountryCode2: "{{.Loc.CountryCode2}}",
@@ -39,12 +34,21 @@ var geodata2 = Rgeo{[]Country{
 			Continent: "{{.Loc.Continent}}",
 			Region: "{{.Loc.Region}}",
 			SubRegion: "{{.Loc.SubRegion}}",
-		},{{if .Multi}}
-		Poly: geom.NewMultiPolygonFlat(geom.{{.Layout}}, {{.Flatcoords}}, {{.Ends}}),{{else}}
-		Poly: geom.NewPolygonFlat(geom.{{.Layout}}, {{.Flatcoords}}, {{.Ends}}),{{end}}
+		},
+		{{- if .Multi}}
+		geo: geom.NewMultiPolygonFlat(geom.{{.Layout}}, {{.Flatcoords}}, {{.Ends}}),
+		{{- else}}
+		geo: geom.NewPolygonFlat(geom.{{.Layout}}, {{.Flatcoords}}, {{.Ends}}),
+		{{- end}}
 	},
-{{end}}}}
+	{{- end}}
+}}
 `
+
+type viewData struct {
+	Varname   string
+	Countries []tpcountry
+}
 
 type tpcountry struct {
 	Loc rgeo.Location
@@ -72,7 +76,7 @@ func main() {
 	)
 
 	for _, c := range fc.Features {
-		thisCountry.Loc = rgeo.GetLocationStrings(c.Properties)
+		thisCountry.Loc = getLocationStrings(c.Properties)
 
 		switch g := c.Geometry.(type) {
 		case *geom.Polygon:
@@ -80,7 +84,7 @@ func main() {
 			thisCountry.Ends = stringFromSlice(g.Ends())
 		case *geom.MultiPolygon:
 			thisCountry.Multi = true
-			thisCountry.Ends = stringFromDSlice(g.Endss())
+			thisCountry.Ends = stringFromSlice(g.Endss())
 		}
 
 		thisCountry.Layout = fmt.Sprint(c.Geometry.Layout())
@@ -98,13 +102,15 @@ func main() {
 	defer outfile.Close()
 
 	w := bufio.NewWriter(outfile)
-	_ = w
 
 	tmpl, err := template.New("dat").Parse(tp)
 	if err != nil {
 		panic(err)
 	}
-	err = tmpl.ExecuteTemplate(w, "dat", countries)
+
+	vd := viewData{strings.TrimSuffix(os.Args[2], ".go"), countries}
+
+	err = tmpl.ExecuteTemplate(w, "dat", vd)
 	if err != nil {
 		panic(err)
 	}
@@ -112,11 +118,6 @@ func main() {
 }
 
 func stringFromSlice(i interface{}) string {
-	return fmt.Sprintf("%T{%s}", i,
-		strings.Trim(strings.Join(strings.Fields(fmt.Sprint(i)), ", "), "[]"))
-}
-
-func stringFromDSlice(i interface{}) string {
 	return fmt.Sprintf("%T%s", i,
 		strings.ReplaceAll(
 			strings.ReplaceAll(
@@ -124,4 +125,55 @@ func stringFromDSlice(i interface{}) string {
 				"[", "{"),
 			"]", "}"),
 	)
+}
+
+// Get the relevant strings from the geojson properties
+func getLocationStrings(p map[string]interface{}) rgeo.Location {
+	country, ok := p["ADMIN"].(string)
+	if !ok {
+		country, ok = p["admin"].(string)
+		if !ok {
+			country = ""
+		}
+	}
+
+	countrylong, ok := p["FORMAL_EN"].(string)
+	if !ok {
+		countrylong = ""
+	}
+
+	countrycode2, ok := p["ISO_A2"].(string)
+	if !ok {
+		countrycode2 = ""
+	}
+
+	countrycode3, ok := p["ISO_A3"].(string)
+	if !ok {
+		countrycode3 = ""
+	}
+
+	continent, ok := p["CONTINENT"].(string)
+	if !ok {
+		continent = ""
+	}
+
+	region, ok := p["REGION_UN"].(string)
+	if !ok {
+		region = ""
+	}
+
+	subregion, ok := p["SUBREGION"].(string)
+	if !ok {
+		subregion = ""
+	}
+
+	return rgeo.Location{
+		Country:      country,
+		CountryLong:  countrylong,
+		CountryCode2: countrycode2,
+		CountryCode3: countrycode3,
+		Continent:    continent,
+		Region:       region,
+		SubRegion:    subregion,
+	}
 }
