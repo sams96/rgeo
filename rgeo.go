@@ -88,16 +88,14 @@ func New() (Rgeo, error) {
 //
 // When run without a type Rgeo it re-creates the polygons every time
 func ReverseGeocode(loc geom.Coord) (Location, error) {
-	/*
-		rgeo, err := New()
-		if err != nil {
-			return Location{}, err
-		}
+	rgeo, err := New()
+	if err != nil {
+		return Location{}, err
+	}
 
-		return rgeo.ReverseGeocode(loc)
-	*/
+	return rgeo.ReverseGeocode(loc)
 
-	return geodata2.ReverseGeocode(loc)
+	//return geodata2.ReverseGeocode(loc)
 }
 
 // ReverseGeocode returns the country in which the given coordinate is located

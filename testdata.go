@@ -1,3 +1,5 @@
+
+// This file is generated
 package rgeo
 
 import geom "github.com/twpayne/go-geom"

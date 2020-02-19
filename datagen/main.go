@@ -16,11 +16,44 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"text/template"
 
 	"github.com/sams96/rgeo"
 	geom "github.com/twpayne/go-geom"
 	"github.com/twpayne/go-geom/encoding/geojson"
 )
+
+const tp = `
+// This file is generated
+package rgeo
+
+import geom "github.com/twpayne/go-geom"
+
+var geodata2 = Rgeo{[]Country{
+{{range .}}	Country{
+		Loc: Location{
+			Country: "{{.Loc.Country}}",
+			CountryLong: "{{.Loc.CountryLong}}",
+			CountryCode2: "{{.Loc.CountryCode2}}",
+			CountryCode3: "{{.Loc.CountryCode3}}",
+			Continent: "{{.Loc.Continent}}",
+			Region: "{{.Loc.Region}}",
+			SubRegion: "{{.Loc.SubRegion}}",
+		},{{if .Multi}}
+		Poly: geom.NewMultiPolygonFlat(geom.{{.Layout}}, {{.Flatcoords}}, {{.Ends}}),{{else}}
+		Poly: geom.NewPolygonFlat(geom.{{.Layout}}, {{.Flatcoords}}, {{.Ends}}),{{end}}
+	},
+{{end}}}}
+`
+
+type tpcountry struct {
+	Loc rgeo.Location
+
+	Multi      bool
+	Layout     string
+	Flatcoords string
+	Ends       string
+}
 
 func main() {
 	infile, err := os.Open(os.Args[1])
@@ -33,7 +66,30 @@ func main() {
 		panic(err)
 	}
 
-	defer infile.Close()
+	var (
+		countries   []tpcountry
+		thisCountry tpcountry
+	)
+
+	for _, c := range fc.Features {
+		thisCountry.Loc = rgeo.GetLocationStrings(c.Properties)
+
+		switch g := c.Geometry.(type) {
+		case *geom.Polygon:
+			thisCountry.Multi = false
+			thisCountry.Ends = stringFromSlice(g.Ends())
+		case *geom.MultiPolygon:
+			thisCountry.Multi = true
+			thisCountry.Ends = stringFromDSlice(g.Endss())
+		}
+
+		thisCountry.Layout = fmt.Sprint(c.Geometry.Layout())
+		thisCountry.Flatcoords = stringFromSlice(c.Geometry.FlatCoords())
+
+		countries = append(countries, thisCountry)
+	}
+
+	infile.Close()
 
 	outfile, err := os.Create(os.Args[2])
 	if err != nil {
@@ -42,75 +98,30 @@ func main() {
 	defer outfile.Close()
 
 	w := bufio.NewWriter(outfile)
+	_ = w
 
-	// Write package header
-	_, err = fmt.Fprintf(w, "package rgeo\n\n")
-	_, err = fmt.Fprintf(w, "import geom \"github.com/twpayne/go-geom\"\n\n")
-	_, err = fmt.Fprintf(w, "var geodata2 = Rgeo{[]Country{\n") // TODO change var name
+	tmpl, err := template.New("dat").Parse(tp)
 	if err != nil {
 		panic(err)
 	}
-
-	for _, c := range fc.Features {
-		_, err = fmt.Fprintf(w, "\tCountry{\n")
-
-		loc := rgeo.GetLocationStrings(c.Properties)
-		_, err = fmt.Fprintf(w, "\t\tLoc: Location{\n")
-		_, err = fmt.Fprintf(w, "\t\t\tCountry: \"%s\",\n", loc.Country)
-		_, err = fmt.Fprintf(w, "\t\t\tCountryLong: \"%s\",\n", loc.CountryLong)
-		_, err = fmt.Fprintf(w, "\t\t\tCountryCode2: \"%s\",\n", loc.CountryCode2)
-		_, err = fmt.Fprintf(w, "\t\t\tCountryCode3: \"%s\",\n", loc.CountryCode3)
-		_, err = fmt.Fprintf(w, "\t\t\tContinent: \"%s\",\n", loc.Continent)
-		_, err = fmt.Fprintf(w, "\t\t\tRegion: \"%s\",\n", loc.Region)
-		_, err = fmt.Fprintf(w, "\t\t\tSubRegion: \"%s\",\n", loc.SubRegion)
-		_, err = fmt.Fprintf(w, "\t\t},\n")
-		if err != nil {
-			panic(err)
-		}
-
-		switch g := c.Geometry.(type) {
-		case *geom.Polygon:
-			_, err = fmt.Fprintf(w,
-				"\t\tPoly: geom.NewPolygonFlat(geom.%s, []float64{%s}, []int{%s}),\n",
-				g.Layout(),
-				stringFromSlice(g.FlatCoords()),
-				stringFromSlice(g.Ends()))
-			if err != nil {
-				panic(err)
-			}
-		case *geom.MultiPolygon:
-			_, err = fmt.Fprintf(w,
-				"\t\tPoly: geom.NewMultiPolygonFlat(geom.%s, []float64{%s}, [][]int%s),\n",
-				g.Layout(),
-				stringFromSlice(g.FlatCoords()),
-				stringFromDSlice(g.Endss()))
-			if err != nil {
-				panic(err)
-			}
-		default:
-			panic("What what")
-		}
-
-		_, err = fmt.Fprintf(w, "\t},\n")
-		w.Flush()
-	}
-
-	_, err = fmt.Fprintf(w, "}}")
+	err = tmpl.ExecuteTemplate(w, "dat", countries)
 	if err != nil {
 		panic(err)
 	}
-
 	w.Flush()
 }
 
 func stringFromSlice(i interface{}) string {
-	return strings.Trim(strings.Join(strings.Fields(fmt.Sprint(i)), ", "), "[]")
+	return fmt.Sprintf("%T{%s}", i,
+		strings.Trim(strings.Join(strings.Fields(fmt.Sprint(i)), ", "), "[]"))
 }
 
 func stringFromDSlice(i interface{}) string {
-	return strings.ReplaceAll(
+	return fmt.Sprintf("%T%s", i,
 		strings.ReplaceAll(
-			strings.Join(strings.Fields(fmt.Sprint(i)), ", "),
-			"[", "{"),
-		"]", "}")
+			strings.ReplaceAll(
+				strings.Join(strings.Fields(fmt.Sprint(i)), ", "),
+				"[", "{"),
+			"]", "}"),
+	)
 }
