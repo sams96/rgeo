@@ -18,6 +18,7 @@ import (
 )
 
 const tp = `// This file is generated
+
 package rgeo
 
 import geom "github.com/twpayne/go-geom"
@@ -26,13 +27,13 @@ var {{.Varname}} = rgeo{[]country{
 	{{- range .Countries}}
 	country{
 		loc: Location{
-			Country: "{{.Loc.Country}}",
-			CountryLong: "{{.Loc.CountryLong}}",
+			Country:	  "{{.Loc.Country}}",
+			CountryLong:  "{{.Loc.CountryLong}}",
 			CountryCode2: "{{.Loc.CountryCode2}}",
 			CountryCode3: "{{.Loc.CountryCode3}}",
-			Continent: "{{.Loc.Continent}}",
-			Region: "{{.Loc.Region}}",
-			SubRegion: "{{.Loc.SubRegion}}",
+			Continent:	  "{{.Loc.Continent}}",
+			Region:		  "{{.Loc.Region}}",
+			SubRegion:	  "{{.Loc.SubRegion}}",
 		},
 		{{- if .Multi}}
 		geo: geom.NewMultiPolygonFlat(geom.{{.Layout}}, {{.Flatcoords}}, {{.Ends}}),
