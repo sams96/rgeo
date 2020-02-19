@@ -42,27 +42,6 @@ fmt.Printf("%s\n", loc.SubRegion)
 // Northern Europe
 ```
 
-Alternatively, if `ReverseGeocode` is being run multiple times, `New()` will
-parse all of the data before hand so less work needs to be done each time.
-```go
-r, err := rgeo.New()
-if err != nil {
-	// Handle error
-}
-
-for i := -33; i <= 31; i += 5 {
-	loc, err := r.ReverseGeocode([]float64{24, float64(i)})
-	if err != nil {
-		// Handle error
-	}
-
-	fmt.Printf("%s, ", loc.CountryCode2)
-}
-
-fmt.Printf("\n")
-
-// Output: ZA, ZA, BW, NA, ZM, CD, CD, CD, CF, SD, SD, LY, LY,
-```
 ## Contributing
 
 Contributions are welcome, I haven't got any guidelines or anything so maybe

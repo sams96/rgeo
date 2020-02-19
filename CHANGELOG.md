@@ -7,28 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-- More robust Location printing
+### Added
+ - More robust Location printing.
+
+### Changed
+ - Data is now included as a struct in a go file instead of geojson.
+ - Changed the algorithm to remove dependence on s2, so it doesn't need to
+   convert between s2 and geom types. This is a lot faster than converting to s2
+   types every time, but slower than pre-converted.
+
+### Removed
+ - Function New() and access to the rgeo data type, the data is already parsed
+   so it doesn't need to be parsed when used.
 
 ## [0.0.2] - 2020-02-17
 
 ### Added
 
- - 2 letter country codes, continents, regions and subregions to output
+ - 2 letter country codes, continents, regions and subregions to output.
  - Type `Rgeo` and function `New` to parse the JSON and create the polygons
    ahead of time so it doesn't need to be done every time `ReverseGeocode` is
-   run
+   run.
 
 ### Changed
 
- - Moved to using s2 Polygons instead of just s2 Loops
- - Using github.com/go-test/deep for nicer printing in tests
+ - Moved to using s2 Polygons instead of just s2 Loops.
+ - Using github.com/go-test/deep for nicer printing in tests.
 
 ## [0.0.1] - 2020-02-15
 
 ### Added
 
 Initial release
- - Exposes Function `ReverseGeocode` and type `Location`
+ - Exposes Function `ReverseGeocode` and type `Location`.
  - Just give `ReverseGeocode` a pair of coordinates and it will return a
    `Location` containing information about which country those coordinates are
    in.

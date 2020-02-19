@@ -112,17 +112,68 @@ func TestReverseGeocode(t *testing.T) {
 				SubRegion:    "Northern Europe",
 			},
 		},
-	}
-
-	rgeo, err := New()
-	if err != nil {
-		t.Error(err)
+		{
+			name: "Libya",
+			in:   []float64{24.994611, 25.860750},
+			err:  nil,
+			expected: Location{
+				Country:      "Libya",
+				CountryLong:  "Libya",
+				CountryCode2: "LY",
+				CountryCode3: "LBY",
+				Continent:    "Africa",
+				Region:       "Africa",
+				SubRegion:    "Northern Africa",
+			},
+		},
+		{
+			name: "Egypt",
+			in:   []float64{25.005187, 25.855963},
+			err:  nil,
+			expected: Location{
+				Country:      "Egypt",
+				CountryLong:  "Arab Republic of Egypt",
+				CountryCode2: "EG",
+				CountryCode3: "EGY",
+				Continent:    "Africa",
+				Region:       "Africa",
+				SubRegion:    "Northern Africa",
+			},
+		},
+		{
+			name: "US Border",
+			in:   []float64{-102.560616, 48.998074},
+			err:  nil,
+			expected: Location{
+				Country:      "United States of America",
+				CountryLong:  "United States of America",
+				CountryCode2: "US",
+				CountryCode3: "USA",
+				Continent:    "North America",
+				Region:       "Americas",
+				SubRegion:    "Northern America",
+			},
+		},
+		{
+			name: "Canada Border",
+			in:   []float64{-102.560616, 49.0},
+			err:  nil,
+			expected: Location{
+				Country:      "Canada",
+				CountryLong:  "Canada",
+				CountryCode2: "CA",
+				CountryCode3: "CAN",
+				Continent:    "North America",
+				Region:       "Americas",
+				SubRegion:    "Northern America",
+			},
+		},
 	}
 
 	for _, test := range tests {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
-			result, err := rgeo.ReverseGeocode(test.in)
+			result, err := ReverseGeocode(test.in)
 			if err != test.err {
 				t.Errorf("expected error: %s\n got: %s\n", test.err, err)
 			}
@@ -200,39 +251,9 @@ func ExampleReverseGeocode() {
 	// Northern Europe
 }
 
-func ExampleReverseGeocode_with_rgeo() {
-	r, err := New()
-	if err != nil {
-		// Handle error
-	}
-
-	for i := -33; i <= 31; i += 5 {
-		loc, err := r.ReverseGeocode([]float64{24, float64(i)})
-		if err != nil {
-			// Handle error
-		}
-
-		fmt.Printf("%s, ", loc.CountryCode2)
-	}
-
-	fmt.Printf("\n")
-
-	// Output: ZA, ZA, BW, NA, ZM, CD, CD, CD, CF, SD, SD, LY, LY,
-}
-
 func BenchmarkReverseGeocode(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		_, _ = ReverseGeocode([]float64{
-			(rand.Float64() * 360) - 180,
-			(rand.Float64() * 180) - 90,
-		})
-	}
-}
-
-func BenchmarkReverseGeocode_with_rgeo(b *testing.B) {
-	r, _ := New()
-	for i := 0; i < b.N; i++ {
-		_, _ = r.ReverseGeocode([]float64{
 			(rand.Float64() * 360) - 180,
 			(rand.Float64() * 180) - 90,
 		})
