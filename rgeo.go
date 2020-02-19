@@ -50,7 +50,7 @@ type Location struct {
 // country hold the Polygon and Location for one country
 type Country struct {
 	Loc  Location
-	Poly *s2.Polygon
+	Poly geom.T
 }
 
 // Rgeo is the type used to hold pre-created polygons for reverse geocoding
@@ -69,17 +69,11 @@ func New() (Rgeo, error) {
 	var (
 		rgeo        Rgeo
 		thisCountry Country
-		err         error
 	)
 
 	for _, c := range fc.Features {
-		thisCountry.Poly, err = PolygonFromGeometry(c.Geometry)
-		if err != nil {
-			return Rgeo{}, err
-		}
-
+		thisCountry.Poly = c.Geometry
 		thisCountry.Loc = GetLocationStrings(c.Properties)
-
 		rgeo.Countries = append(rgeo.Countries, thisCountry)
 	}
 
@@ -116,7 +110,12 @@ func ReverseGeocode(loc geom.Coord) (Location, error) {
 // calculating them every time
 func (r *Rgeo) ReverseGeocode(loc geom.Coord) (Location, error) {
 	for _, country := range r.Countries {
-		if in := polygonContainsCoord(country.Poly, loc); in {
+		poly, err := PolygonFromGeometry(country.Poly)
+		if err != nil {
+			return Location{}, err
+		}
+
+		if in := polygonContainsCoord(poly, loc); in {
 			return country.Loc, nil
 		}
 	}

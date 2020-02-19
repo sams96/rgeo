@@ -15,8 +15,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/sams96/rgeo"
+	geom "github.com/twpayne/go-geom"
 	"github.com/twpayne/go-geom/encoding/geojson"
 )
 
@@ -43,8 +45,7 @@ func main() {
 
 	// Write package header
 	_, err = fmt.Fprintf(w, "package rgeo\n\n")
-	_, err = fmt.Fprintf(w, "import (\n\t\"github.com/golang/geo/s2\"\n")
-	_, err = fmt.Fprintf(w, "\t\"github.com/golang/geo/r3\"\n)\n\n")
+	_, err = fmt.Fprintf(w, "import geom \"github.com/twpayne/go-geom\"\n\n")
 	_, err = fmt.Fprintf(w, "var geodata2 = Rgeo{[]Country{\n") // TODO change var name
 	if err != nil {
 		panic(err)
@@ -67,37 +68,27 @@ func main() {
 			panic(err)
 		}
 
-		_, err = fmt.Fprintf(w, "\t\tPoly: s2.PolygonFromLoops([]*s2.Loop{\n")
-		if err != nil {
-			panic(err)
-		}
-
-		poly, err := rgeo.PolygonFromGeometry(c.Geometry)
-		if err != nil {
-			panic(err)
-		}
-
-		for _, l := range poly.Loops() {
-			_, err = fmt.Fprintf(w, "\t\t\ts2.LoopFromPoints([]s2.Point{\n")
+		switch g := c.Geometry.(type) {
+		case *geom.Polygon:
+			_, err = fmt.Fprintf(w,
+				"\t\tPoly: geom.NewPolygonFlat(geom.%s, []float64{%s}, []int{%s}),\n",
+				g.Layout(),
+				stringFromSlice(g.FlatCoords()),
+				stringFromSlice(g.Ends()))
 			if err != nil {
 				panic(err)
 			}
-			for _, v := range l.Vertices() {
-				_, err = fmt.Fprintf(w, "\t\t\t\ts2.Point{r3.Vector{%f, %f, %f}},\n",
-					v.X, v.Y, v.Z)
-				if err != nil {
-					panic("wrong len vertex")
-				}
-			}
-			_, err = fmt.Fprintf(w, "\t\t\t}),\n")
+		case *geom.MultiPolygon:
+			_, err = fmt.Fprintf(w,
+				"\t\tPoly: geom.NewMultiPolygonFlat(geom.%s, []float64{%s}, [][]int%s),\n",
+				g.Layout(),
+				stringFromSlice(g.FlatCoords()),
+				stringFromDSlice(g.Endss()))
 			if err != nil {
 				panic(err)
 			}
-
-		}
-		_, err = fmt.Fprintf(w, "\t\t}),\n")
-		if err != nil {
-			panic(err)
+		default:
+			panic("What what")
 		}
 
 		_, err = fmt.Fprintf(w, "\t},\n")
@@ -110,4 +101,16 @@ func main() {
 	}
 
 	w.Flush()
+}
+
+func stringFromSlice(i interface{}) string {
+	return strings.Trim(strings.Join(strings.Fields(fmt.Sprint(i)), ", "), "[]")
+}
+
+func stringFromDSlice(i interface{}) string {
+	return strings.ReplaceAll(
+		strings.ReplaceAll(
+			strings.Join(strings.Fields(fmt.Sprint(i)), ", "),
+			"[", "{"),
+		"]", "}")
 }
