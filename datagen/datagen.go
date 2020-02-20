@@ -45,9 +45,11 @@ var {{.Varname}} = rgeo{[]country{
 			SubRegion:	  "{{.Loc.SubRegion}}",
 		},
 		{{- if .Multi}}
-		geo: geom.NewMultiPolygonFlat(geom.{{.Layout}}, {{.Flatcoords}}, {{.Ends}}),
+		geo: newMPolyWithBounds(geom.{{.Layout}}, {{.Flatcoords}},
+			{{.Bounds}}, {{.Ends}}),
 		{{- else}}
-		geo: geom.NewPolygonFlat(geom.{{.Layout}}, {{.Flatcoords}}, {{.Ends}}),
+		geo: newPolyWithBounds(geom.{{.Layout}}, {{.Flatcoords}},
+			{{.Bounds}}, {{.Ends}}),
 		{{- end}}
 	},
 	{{- end}}
@@ -68,6 +70,7 @@ type tpcountry struct {
 	Layout     string
 	Flatcoords string
 	Ends       string
+	Bounds     string
 }
 
 func main() {
@@ -91,7 +94,8 @@ func main() {
 	for _, c := range fc.Features {
 		thisCountry.Loc = getLocationStrings(c.Properties)
 
-		switch g := c.Geometry.(type) {
+		g := c.Geometry
+		switch g.(type) {
 		case *geom.Polygon:
 			thisCountry.Multi = false
 			thisCountry.Ends = stringFromSlice(g.Ends())
@@ -100,8 +104,10 @@ func main() {
 			thisCountry.Ends = stringFromSlice(g.Endss())
 		}
 
-		thisCountry.Layout = fmt.Sprint(c.Geometry.Layout())
-		thisCountry.Flatcoords = stringFromSlice(c.Geometry.FlatCoords())
+		thisCountry.Layout = fmt.Sprint(g.Layout())
+		thisCountry.Flatcoords = stringFromSlice(g.FlatCoords())
+		thisCountry.Bounds = stringFromSlice([]float64{g.Bounds().Min(0),
+			g.Bounds().Min(1), g.Bounds().Max(0), g.Bounds().Max(1)})
 
 		countries = append(countries, thisCountry)
 	}

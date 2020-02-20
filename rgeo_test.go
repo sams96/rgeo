@@ -173,7 +173,7 @@ func TestReverseGeocode(t *testing.T) {
 	for _, test := range tests {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
-			result, err := ReverseGeocode(test.in)
+			result, err := ReverseGeocode(test.in, false)
 			if err != test.err {
 				t.Errorf("expected error: %s\n got: %s\n", test.err, err)
 			}
@@ -229,7 +229,7 @@ func TestString(t *testing.T) {
 }
 
 func ExampleReverseGeocode() {
-	loc, err := ReverseGeocode([]float64{0, 52})
+	loc, err := ReverseGeocode([]float64{0, 52}, false)
 	if err != nil {
 		// Handle error
 	}
@@ -256,6 +256,15 @@ func BenchmarkReverseGeocode(b *testing.B) {
 		_, _ = ReverseGeocode([]float64{
 			(rand.Float64() * 360) - 180,
 			(rand.Float64() * 180) - 90,
-		})
+		}, false)
+	}
+}
+
+func BenchmarkReverseGeocode_Checkbounds(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		_, _ = ReverseGeocode([]float64{
+			(rand.Float64() * 360) - 180,
+			(rand.Float64() * 180) - 90,
+		}, true)
 	}
 }

@@ -27,6 +27,8 @@ import (
 
 var errCountryNotFound = errors.Errorf("country not found")
 
+//var countries110 = rgeo{}
+
 // Location is the return type for ReverseGeocode
 type Location struct {
 	// Commonly used country name
@@ -62,8 +64,8 @@ type rgeo struct {
 // (i.e. []float64{lon, lat})
 //
 // When run without a type rgeo it re-creates the polygons every time
-func ReverseGeocode(loc geom.Coord) (Location, error) {
-	return countries110.ReverseGeocode(loc)
+func ReverseGeocode(loc geom.Coord, checkbounds bool) (Location, error) {
+	return countries110.ReverseGeocode(loc, checkbounds)
 }
 
 // ReverseGeocode returns the country in which the given coordinate is located
@@ -74,8 +76,14 @@ func ReverseGeocode(loc geom.Coord) (Location, error) {
 //
 // When run on a type rgeo it uses the pre-created polygons instead of
 // calculating them every time
-func (r *rgeo) ReverseGeocode(loc geom.Coord) (Location, error) {
+func (r *rgeo) ReverseGeocode(loc geom.Coord, checkbounds bool) (Location, error) {
 	for _, country := range r.countries {
+		if checkbounds {
+			if !country.geo.Bounds().OverlapsPoint(geom.XY, loc) {
+				continue
+			}
+		}
+
 		if in := geometryContainsCoord(country.geo, loc); in {
 			return country.loc, nil
 		}
@@ -156,4 +164,16 @@ func multiPolygonContainsCoord(g *geom.MultiPolygon, pt geom.Coord) bool {
 	}
 
 	return false
+}
+
+func newPolyWithBounds(l geom.Layout, fc, b []float64, ends []int) *geom.Polygon {
+	ret := geom.NewPolygonFlat(l, fc, ends)
+	ret.Bounds().Set(b...)
+	return ret
+}
+
+func newMPolyWithBounds(l geom.Layout, fc, b []float64, ends [][]int) *geom.MultiPolygon {
+	ret := geom.NewMultiPolygonFlat(l, fc, ends)
+	ret.Bounds().Set(b...)
+	return ret
 }
