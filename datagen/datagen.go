@@ -1,6 +1,14 @@
 /*
 This program is converts geojson files into go files containing structs that can
-be read by rgeo
+be read by rgeo. You can use this if you want to use a different dataset to any
+of those included.
+
+Usage
+
+	go run datagen.go infile.geojson outfile.go
+
+The variable containing the data will be named outfile. Currently rgeo will only
+look for at the variable called countries110.
 */
 package main
 
@@ -17,6 +25,7 @@ import (
 	"github.com/twpayne/go-geom/encoding/geojson"
 )
 
+// Template for generated code
 const tp = `// This file is generated
 
 package rgeo
@@ -45,11 +54,13 @@ var {{.Varname}} = rgeo{[]country{
 }}
 `
 
+// viewData fills template tp
 type viewData struct {
 	Varname   string
 	Countries []tpcountry
 }
 
+// tpcountry holds country data
 type tpcountry struct {
 	Loc rgeo.Location
 
@@ -60,11 +71,13 @@ type tpcountry struct {
 }
 
 func main() {
+	// Open infile
 	infile, err := os.Open(os.Args[1])
 	if err != nil {
 		panic(err)
 	}
 
+	// Parse geojson
 	var fc geojson.FeatureCollection
 	if err := json.NewDecoder(infile).Decode(&fc); err != nil {
 		panic(err)
@@ -95,6 +108,7 @@ func main() {
 
 	infile.Close()
 
+	// Open outfile
 	outfile, err := os.Create(os.Args[2])
 	if err != nil {
 		panic(err)
@@ -103,6 +117,7 @@ func main() {
 
 	w := bufio.NewWriter(outfile)
 
+	// Create template
 	tmpl, err := template.New("dat").Parse(tp)
 	if err != nil {
 		panic(err)
@@ -110,13 +125,16 @@ func main() {
 
 	vd := viewData{strings.TrimSuffix(os.Args[2], ".go"), countries}
 
+	// Write template
 	err = tmpl.ExecuteTemplate(w, "dat", vd)
 	if err != nil {
 		panic(err)
 	}
+
 	w.Flush()
 }
 
+// stringFromSlice creates a string to represent a slice in generated code
 func stringFromSlice(i interface{}) string {
 	return fmt.Sprintf("%T%s", i,
 		strings.ReplaceAll(
