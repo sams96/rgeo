@@ -1,5 +1,5 @@
 /*
-This program is converts geojson files into go files containing structs that can
+Command datagen converts geojson files into go files containing structs that can
 be read by rgeo. You can use this if you want to use a different dataset to any
 of those included.
 
@@ -35,7 +35,7 @@ import geom "github.com/twpayne/go-geom"
 
 var {{.Varname}} = rgeo{[]country{
 	{{- range .Countries}}
-	country{
+	{
 		loc: Location{
 			Country:      "{{.Loc.Country}}",
 			CountryLong:  "{{.Loc.CountryLong}}",
@@ -74,7 +74,9 @@ type tpcountry struct {
 func main() {
 	// Read args
 	outFileName := flag.String("o", "", "Path to output file")
+
 	flag.Parse()
+
 	if *outFileName == "" {
 		fmt.Println("Please specify an output file with -o")
 		return
@@ -113,6 +115,7 @@ func main() {
 
 func readInputs(in []string) ([]tpcountry, error) {
 	var feats []tpcountry
+
 	for _, f := range in {
 		// Open infile
 		infile, err := os.Open(f)

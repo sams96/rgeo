@@ -4,7 +4,7 @@
 [![](https://goreportcard.com/badge/github.com/sams96/rgeo?style=for-the-badge)](https://goreportcard.com/report/github.com/sams96/rgeo)
 [![Release](https://img.shields.io/github/tag/sams96/rgeo.svg?label=release&color=24B898&logo=github&style=for-the-badge)](https://github.com/sams96/rgeo/releases/latest)
 
-Package rgeo is a fast, simple solution for local reverse geocoding
+Package rgeo is a fast, simple solution for local reverse geocoding.
 
 Rather than relying on external software or online APIs, rgeo packages all of
 the data it needs in your binary. This means it will only ever work down to the

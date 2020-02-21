@@ -1,5 +1,5 @@
 /*
-Package rgeo is a fast, simple solution for local reverse geocoding
+Package rgeo is a fast, simple solution for local reverse geocoding.
 
 Rather than relying on external software or online APIs, rgeo packages all of
 the data it needs in your binary. This means it will only ever work down to the
@@ -25,6 +25,7 @@ import (
 	"github.com/twpayne/go-geom/xy"
 )
 
+// ErrCountryNotFound is returned when no country is found for given coordinates
 var ErrCountryNotFound = errors.Errorf("country not found")
 
 // Location is the return type for ReverseGeocode
