@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
  - JSON strings in `Location` for more idiomatic marshalling .
+ - datagen can now read multiple inputs to one output.
 
 ## [0.0.4] - 2020-02-20
 

@@ -81,7 +81,7 @@ func (r *rgeo) ReverseGeocode(loc geom.Coord) (Location, error) {
 		}
 	}
 
-	return Location{}, errCountryNotFound
+	return Location{}, ErrCountryNotFound
 }
 
 // String method for type Location

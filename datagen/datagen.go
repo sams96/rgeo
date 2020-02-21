@@ -5,7 +5,7 @@ of those included.
 
 Usage
 
-	go run datagen.go infile.geojson outfile.go
+	go run datagen.go -o outfile.go infile.geojson
 
 The variable containing the data will be named outfile. Currently rgeo will only
 look for at the variable called countries110.
@@ -15,6 +15,7 @@ package main
 import (
 	"bufio"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"os"
 	"strings"
@@ -71,42 +72,17 @@ type tpcountry struct {
 }
 
 func main() {
-	// Open infile
-	infile, err := os.Open(os.Args[1])
+	outFileName := flag.String("o", "", "Path to output file")
+	flag.Parse()
+	if *outFileName == "" {
+		fmt.Println("Please specify an output file with -o")
+		return
+	}
+
+	feats, err := readInputs(flag.Args())
 	if err != nil {
 		panic(err)
 	}
-
-	// Parse geojson
-	var fc geojson.FeatureCollection
-	if err := json.NewDecoder(infile).Decode(&fc); err != nil {
-		panic(err)
-	}
-
-	var (
-		countries   []tpcountry
-		thisCountry tpcountry
-	)
-
-	for _, c := range fc.Features {
-		thisCountry.Loc = getLocationStrings(c.Properties)
-
-		switch g := c.Geometry.(type) {
-		case *geom.Polygon:
-			thisCountry.Multi = false
-			thisCountry.Ends = stringFromSlice(g.Ends())
-		case *geom.MultiPolygon:
-			thisCountry.Multi = true
-			thisCountry.Ends = stringFromSlice(g.Endss())
-		}
-
-		thisCountry.Layout = fmt.Sprint(c.Geometry.Layout())
-		thisCountry.Flatcoords = stringFromSlice(c.Geometry.FlatCoords())
-
-		countries = append(countries, thisCountry)
-	}
-
-	infile.Close()
 
 	// Open outfile
 	outfile, err := os.Create(os.Args[2])
@@ -123,7 +99,7 @@ func main() {
 		panic(err)
 	}
 
-	vd := viewData{strings.TrimSuffix(os.Args[2], ".go"), countries}
+	vd := viewData{strings.TrimSuffix(os.Args[2], ".go"), feats}
 
 	// Write template
 	err = tmpl.ExecuteTemplate(w, "dat", vd)
@@ -132,6 +108,49 @@ func main() {
 	}
 
 	w.Flush()
+}
+
+func readInputs(in []string) ([]tpcountry, error) {
+	var feats []tpcountry
+	for _, f := range in {
+		// Open infile
+		infile, err := os.Open(f)
+		if err != nil {
+			return []tpcountry{}, err
+		}
+
+		// Parse geojson
+		var fc geojson.FeatureCollection
+		if err := json.NewDecoder(infile).Decode(&fc); err != nil {
+			return []tpcountry{}, err
+		}
+
+		var (
+			thisCountry tpcountry
+		)
+
+		for _, c := range fc.Features {
+			thisCountry.Loc = getLocationStrings(c.Properties)
+
+			switch g := c.Geometry.(type) {
+			case *geom.Polygon:
+				thisCountry.Multi = false
+				thisCountry.Ends = stringFromSlice(g.Ends())
+			case *geom.MultiPolygon:
+				thisCountry.Multi = true
+				thisCountry.Ends = stringFromSlice(g.Endss())
+			}
+
+			thisCountry.Layout = fmt.Sprint(c.Geometry.Layout())
+			thisCountry.Flatcoords = stringFromSlice(c.Geometry.FlatCoords())
+
+			feats = append(feats, thisCountry)
+		}
+
+		infile.Close()
+	}
+
+	return feats, nil
 }
 
 // stringFromSlice creates a string to represent a slice in generated code

@@ -6,7 +6,7 @@ of those included.
 
 ### Usage
 
-    go run datagen.go infile.geojson outfile.go
+    go run datagen.go -o outfile.go infile.geojson
 
 The variable containing the data will be named `outfile`. Currently rgeo will only
 look for at the variable called `countries110`.

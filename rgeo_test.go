@@ -61,13 +61,13 @@ func TestReverseGeocode(t *testing.T) {
 		{
 			name:     "Ocean",
 			in:       []float64{0, 0},
-			err:      errCountryNotFound,
+			err:      ErrCountryNotFound,
 			expected: Location{},
 		},
 		{
 			name:     "North Pole",
 			in:       []float64{-135, 90},
-			err:      errCountryNotFound,
+			err:      ErrCountryNotFound,
 			expected: Location{},
 		},
 		{
