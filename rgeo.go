@@ -25,23 +25,23 @@ import (
 	"github.com/twpayne/go-geom/xy"
 )
 
-var errCountryNotFound = errors.Errorf("country not found")
+var ErrCountryNotFound = errors.Errorf("country not found")
 
 // Location is the return type for ReverseGeocode
 type Location struct {
 	// Commonly used country name
-	Country string
+	Country string `json:"country,omitempty"`
 
 	// Formal name of country
-	CountryLong string
+	CountryLong string `json:"country_long,omitempty"`
 
 	// Two and three letter ISO 3166 codes
-	CountryCode2 string
-	CountryCode3 string
+	CountryCode2 string `json:"country_code_2,omitempty"`
+	CountryCode3 string `json:"country_code_3,omitempty"`
 
-	Continent string
-	Region    string
-	SubRegion string
+	Continent string `json:"continent,omitempty"`
+	Region    string `json:"region,omitempty"`
+	SubRegion string `json:"subregion,omitempty"`
 }
 
 // country hold the Polygon and Location for one country
