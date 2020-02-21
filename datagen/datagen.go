@@ -37,13 +37,13 @@ var {{.Varname}} = rgeo{[]country{
 	{{- range .Countries}}
 	country{
 		loc: Location{
-			Country:	  "{{.Loc.Country}}",
+			Country:      "{{.Loc.Country}}",
 			CountryLong:  "{{.Loc.CountryLong}}",
 			CountryCode2: "{{.Loc.CountryCode2}}",
 			CountryCode3: "{{.Loc.CountryCode3}}",
-			Continent:	  "{{.Loc.Continent}}",
-			Region:		  "{{.Loc.Region}}",
-			SubRegion:	  "{{.Loc.SubRegion}}",
+			Continent:    "{{.Loc.Continent}}",
+			Region:       "{{.Loc.Region}}",
+			SubRegion:    "{{.Loc.SubRegion}}",
 		},
 		{{- if .Multi}}
 		geo: geom.NewMultiPolygonFlat(geom.{{.Layout}}, {{.Flatcoords}}, {{.Ends}}),
@@ -72,6 +72,7 @@ type tpcountry struct {
 }
 
 func main() {
+	// Read args
 	outFileName := flag.String("o", "", "Path to output file")
 	flag.Parse()
 	if *outFileName == "" {
@@ -94,7 +95,7 @@ func main() {
 	w := bufio.NewWriter(outfile)
 
 	// Create template
-	tmpl, err := template.New("dat").Parse(tp)
+	tmpl, err := template.New("tmpl").Parse(tp)
 	if err != nil {
 		panic(err)
 	}
@@ -102,7 +103,7 @@ func main() {
 	vd := viewData{strings.TrimSuffix(os.Args[2], ".go"), feats}
 
 	// Write template
-	err = tmpl.ExecuteTemplate(w, "dat", vd)
+	err = tmpl.ExecuteTemplate(w, "tmpl", vd)
 	if err != nil {
 		panic(err)
 	}
