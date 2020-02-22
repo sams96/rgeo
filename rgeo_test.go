@@ -172,12 +172,12 @@ func TestReverseGeocode_Countries(t *testing.T) {
 
 	datasets := []func() *rgeo{Countries110, Countries50, Countries10, Provinces10}
 
-	for i, dataset := range datasets {
-
+	for i, ds := range datasets {
+		dataset := ds()
 		for _, test := range tests {
 			test := test
 			t.Run(test.name, func(t *testing.T) {
-				result, err := ReverseGeocode(test.in, dataset())
+				result, err := ReverseGeocode(test.in, dataset)
 				if err != test.err {
 					t.Errorf("expected error: %s\n got: %s\n", test.err, err)
 				}
@@ -258,16 +258,8 @@ func ExampleReverseGeocode() {
 }
 
 func BenchmarkReverseGeocode_110(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		_, _ = ReverseGeocode([]float64{
-			(rand.Float64() * 360) - 180,
-			(rand.Float64() * 180) - 90,
-		}, Countries110())
-	}
-}
-
-func BenchmarkReverseGeocode_110Pre(b *testing.B) {
 	dataset := Countries110()
+	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_, _ = ReverseGeocode([]float64{
 			(rand.Float64() * 360) - 180,
@@ -277,16 +269,8 @@ func BenchmarkReverseGeocode_110Pre(b *testing.B) {
 }
 
 func BenchmarkReverseGeocode_50(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		_, _ = ReverseGeocode([]float64{
-			(rand.Float64() * 360) - 180,
-			(rand.Float64() * 180) - 90,
-		}, Countries50())
-	}
-}
-
-func BenchmarkReverseGeocode_50Pre(b *testing.B) {
 	dataset := Countries50()
+	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_, _ = ReverseGeocode([]float64{
 			(rand.Float64() * 360) - 180,
@@ -296,16 +280,8 @@ func BenchmarkReverseGeocode_50Pre(b *testing.B) {
 }
 
 func BenchmarkReverseGeocode_10(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		_, _ = ReverseGeocode([]float64{
-			(rand.Float64() * 360) - 180,
-			(rand.Float64() * 180) - 90,
-		}, Countries10())
-	}
-}
-
-func BenchmarkReverseGeocode_10Pre(b *testing.B) {
 	dataset := Countries10()
+	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_, _ = ReverseGeocode([]float64{
 			(rand.Float64() * 360) - 180,
@@ -315,16 +291,8 @@ func BenchmarkReverseGeocode_10Pre(b *testing.B) {
 }
 
 func BenchmarkReverseGeocode_Prov10(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		_, _ = ReverseGeocode([]float64{
-			(rand.Float64() * 360) - 180,
-			(rand.Float64() * 180) - 90,
-		}, Provinces10())
-	}
-}
-
-func BenchmarkReverseGeocode_Prov10Pre(b *testing.B) {
 	dataset := Provinces10()
+	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_, _ = ReverseGeocode([]float64{
 			(rand.Float64() * 360) - 180,

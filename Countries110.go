@@ -1956,6 +1956,6 @@ func Countries110() *rgeo {
 		Region:       "Africa",
 		SubRegion:    "Eastern Africa",
 	}
-	return &rgeo{index, locs}
+	return &rgeo{index, locs, nil}
 }
 
