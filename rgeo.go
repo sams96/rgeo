@@ -53,13 +53,14 @@ type Location struct {
 
 // country hold the Polygon and Location for one country
 type country struct {
+	s2.Polygon
 	loc Location
-	geo *s2.Polygon
 }
 
 // rgeo is the type used to hold pre-created polygons for reverse geocoding
 type rgeo struct {
-	countries []country
+	index *s2.ShapeIndex
+	locs  map[s2.Shape]Location
 }
 
 // ReverseGeocode returns the country in which the given coordinate is located
@@ -73,13 +74,13 @@ type rgeo struct {
 // aren't using. If using ReverseGeocode multiple times I would advise you to
 // get the value from the function as a variable first and use that
 func ReverseGeocode(loc geom.Coord, dataset *rgeo) (Location, error) {
-	for _, feature := range dataset.countries {
-		if in := feature.geo.ContainsPoint(pointFromCoord(loc)); in {
-			return feature.loc, nil
-		}
+	q := s2.NewContainsPointQuery(dataset.index, s2.VertexModelOpen)
+	res := q.ContainingShapes(pointFromCoord(loc))
+	if len(res) == 0 {
+		return Location{}, ErrLocationNotFound
 	}
 
-	return Location{}, ErrLocationNotFound
+	return dataset.locs[res[0]], nil
 }
 
 // String method for type Location

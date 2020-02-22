@@ -35,25 +35,29 @@ const tp = `// This file is generated
 
 package rgeo
 
+import "github.com/golang/geo/s2"
+
 // {{.Varname}} {{.Comment}}
 func {{.Varname}}() *rgeo {
-	return &rgeo{[]country{
-		{{- range .Countries}}
-		{
-			loc: Location{
-				Country:      "{{.Loc.Country}}",
-				CountryLong:  "{{.Loc.CountryLong}}",
-				CountryCode2: "{{.Loc.CountryCode2}}",
-				CountryCode3: "{{.Loc.CountryCode3}}",
-				Continent:    "{{.Loc.Continent}}",
-				Region:       "{{.Loc.Region}}",
-				SubRegion:    "{{.Loc.SubRegion}}",
-			},
-			geo: decode("{{.Geo}}"),
-		},
-		{{- end}}
-	}}
+	index := s2.NewShapeIndex()
+	locs := make(map[s2.Shape]Location)
+	var s *s2.Polygon
+	{{- range .Countries}}
+	s = decode("{{.Geo}}")
+	index.Add(s)
+	locs[s] = Location{
+		Country:      "{{.Loc.Country}}",
+		CountryLong:  "{{.Loc.CountryLong}}",
+		CountryCode2: "{{.Loc.CountryCode2}}",
+		CountryCode3: "{{.Loc.CountryCode3}}",
+		Continent:    "{{.Loc.Continent}}",
+		Region:       "{{.Loc.Region}}",
+		SubRegion:    "{{.Loc.SubRegion}}",
+	}
+	{{- end}}
+	return &rgeo{index, locs}
 }
+
 `
 
 // viewData fills template tp
