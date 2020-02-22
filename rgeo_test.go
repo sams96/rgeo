@@ -9,7 +9,7 @@ import (
 	geom "github.com/twpayne/go-geom"
 )
 
-func TestReverseGeocode(t *testing.T) {
+func TestReverseGeocode_Countries(t *testing.T) {
 	tests := []struct {
 		name     string
 		in       geom.Coord
@@ -170,7 +170,8 @@ func TestReverseGeocode(t *testing.T) {
 		},
 	}
 
-	datasets := []func() *rgeo{Countries110, Countries50, Countries10}
+	datasets := []func() *rgeo{Countries110, Countries50, Countries10,
+		Provinces10}
 
 	for i, dataset := range datasets {
 
@@ -306,6 +307,25 @@ func BenchmarkReverseGeocode_10(b *testing.B) {
 
 func BenchmarkReverseGeocode_10Pre(b *testing.B) {
 	dataset := Countries10()
+	for i := 0; i < b.N; i++ {
+		_, _ = ReverseGeocode([]float64{
+			(rand.Float64() * 360) - 180,
+			(rand.Float64() * 180) - 90,
+		}, dataset)
+	}
+}
+
+func BenchmarkReverseGeocode_Prov(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		_, _ = ReverseGeocode([]float64{
+			(rand.Float64() * 360) - 180,
+			(rand.Float64() * 180) - 90,
+		}, Provinces10())
+	}
+}
+
+func BenchmarkReverseGeocode_ProvPre(b *testing.B) {
+	dataset := Provinces10()
 	for i := 0; i < b.N; i++ {
 		_, _ = ReverseGeocode([]float64{
 			(rand.Float64() * 360) - 180,
