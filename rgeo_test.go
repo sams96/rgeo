@@ -61,13 +61,13 @@ func TestReverseGeocode(t *testing.T) {
 		{
 			name:     "Ocean",
 			in:       []float64{0, 0},
-			err:      ErrCountryNotFound,
+			err:      ErrLocationNotFound,
 			expected: Location{},
 		},
 		{
 			name:     "North Pole",
 			in:       []float64{-135, 90},
-			err:      ErrCountryNotFound,
+			err:      ErrLocationNotFound,
 			expected: Location{},
 		},
 		{
@@ -114,7 +114,7 @@ func TestReverseGeocode(t *testing.T) {
 		},
 		{
 			name: "Libya",
-			in:   []float64{24.994611, 25.860750},
+			in:   []float64{24.98, 25.86},
 			err:  nil,
 			expected: Location{
 				Country:      "Libya",
@@ -142,7 +142,7 @@ func TestReverseGeocode(t *testing.T) {
 		},
 		{
 			name: "US Border",
-			in:   []float64{-102.560616, 48.998074},
+			in:   []float64{-102.560616, 48.992073},
 			err:  nil,
 			expected: Location{
 				Country:      "United States of America",
@@ -170,17 +170,20 @@ func TestReverseGeocode(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
-		test := test
-		t.Run(test.name, func(t *testing.T) {
-			result, err := ReverseGeocode(test.in)
-			if err != test.err {
-				t.Errorf("expected error: %s\n got: %s\n", test.err, err)
-			}
-			if diff := deep.Equal(test.expected, result); diff != nil {
-				t.Error(diff)
-			}
-		})
+	for i, dataset := range []*rgeo{&Countries110, &Countries50, &Countries10} {
+
+		for _, test := range tests {
+			test := test
+			t.Run(test.name, func(t *testing.T) {
+				result, err := ReverseGeocode(test.in, dataset)
+				if err != test.err {
+					t.Errorf("expected error: %s\n got: %s\n", test.err, err)
+				}
+				if diff := deep.Equal(test.expected, result); diff != nil {
+					t.Error("In dataset", i, diff)
+				}
+			})
+		}
 	}
 }
 
@@ -229,7 +232,7 @@ func TestString(t *testing.T) {
 }
 
 func ExampleReverseGeocode() {
-	loc, err := ReverseGeocode([]float64{0, 52})
+	loc, err := ReverseGeocode([]float64{0, 52}, &Countries110)
 	if err != nil {
 		// Handle error
 	}
@@ -251,11 +254,29 @@ func ExampleReverseGeocode() {
 	// Northern Europe
 }
 
-func BenchmarkReverseGeocode(b *testing.B) {
+func BenchmarkReverseGeocode_110(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		_, _ = ReverseGeocode([]float64{
 			(rand.Float64() * 360) - 180,
 			(rand.Float64() * 180) - 90,
-		})
+		}, &Countries110)
+	}
+}
+
+func BenchmarkReverseGeocode_50(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		_, _ = ReverseGeocode([]float64{
+			(rand.Float64() * 360) - 180,
+			(rand.Float64() * 180) - 90,
+		}, &Countries50)
+	}
+}
+
+func BenchmarkReverseGeocode_10(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		_, _ = ReverseGeocode([]float64{
+			(rand.Float64() * 360) - 180,
+			(rand.Float64() * 180) - 90,
+		}, &Countries10)
 	}
 }

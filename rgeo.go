@@ -6,7 +6,9 @@ the data it needs in your binary. This means it will only ever work down to the
 level of cities (though currently just countries), but if that's all you need
 then this is the library for you.
 
-rgeo uses data from https://naturalearthdata.com.
+rgeo uses data from https://naturalearthdata.com, if your coordinates are going
+to be near specific borders I would advise checking the data beforehand (links
+to which are in the files).
 
 Installation
 
@@ -25,8 +27,8 @@ import (
 	"github.com/twpayne/go-geom/xy"
 )
 
-// ErrCountryNotFound is returned when no country is found for given coordinates
-var ErrCountryNotFound = errors.Errorf("country not found")
+// ErrLocationNotFound is returned when no country is found for given coordinates
+var ErrLocationNotFound = errors.Errorf("country not found")
 
 // Location is the return type for ReverseGeocode
 type Location struct {
@@ -63,26 +65,14 @@ type rgeo struct {
 // (i.e. []float64{lon, lat})
 //
 // When run without a type rgeo it re-creates the polygons every time
-func ReverseGeocode(loc geom.Coord) (Location, error) {
-	return countries110.ReverseGeocode(loc)
-}
-
-// ReverseGeocode returns the country in which the given coordinate is located
-//
-// The input is a geom.Coord`, which is just a []float64 with the longitude
-// in the zeroth position and the latitude in the first position.
-// (i.e. []float64{lon, lat})
-//
-// When run on a type rgeo it uses the pre-created polygons instead of
-// calculating them every time
-func (r *rgeo) ReverseGeocode(loc geom.Coord) (Location, error) {
-	for _, country := range r.countries {
-		if in := geometryContainsCoord(country.geo, loc); in {
-			return country.loc, nil
+func ReverseGeocode(loc geom.Coord, dataset *rgeo) (Location, error) {
+	for _, feature := range dataset.countries {
+		if in := geometryContainsCoord(feature.geo, loc); in {
+			return feature.loc, nil
 		}
 	}
 
-	return Location{}, ErrCountryNotFound
+	return Location{}, ErrLocationNotFound
 }
 
 // String method for type Location
