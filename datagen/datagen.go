@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"log"
 	"os"
 	"strings"
 	"text/template"
@@ -55,7 +56,7 @@ func {{.Varname}}() *rgeo {
 		SubRegion:    "{{.Loc.SubRegion}}",
 	}
 	{{- end}}
-	return &rgeo{index, locs}
+	return &rgeo{index, locs, nil}
 }
 
 `
@@ -89,13 +90,13 @@ func main() {
 
 	feats, err := readInputs(flag.Args(), *mergeFileName)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
 	// Open outfile
 	outfile, err := os.Create(*outFileName)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	defer outfile.Close()
 
@@ -120,13 +121,13 @@ func main() {
 	// Create template
 	tmpl, err := template.New("tmpl").Parse(tp)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
 	// Write template
 	err = tmpl.ExecuteTemplate(w, "tmpl", vd)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
 	w.Flush()

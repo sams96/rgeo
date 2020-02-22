@@ -61,6 +61,7 @@ type country struct {
 type rgeo struct {
 	index *s2.ShapeIndex
 	locs  map[s2.Shape]Location
+	query *s2.ContainsPointQuery
 }
 
 // ReverseGeocode returns the country in which the given coordinate is located
@@ -74,8 +75,10 @@ type rgeo struct {
 // aren't using. If using ReverseGeocode multiple times I would advise you to
 // get the value from the function as a variable first and use that
 func ReverseGeocode(loc geom.Coord, dataset *rgeo) (Location, error) {
-	q := s2.NewContainsPointQuery(dataset.index, s2.VertexModelOpen)
-	res := q.ContainingShapes(pointFromCoord(loc))
+	if dataset.query == nil {
+		dataset.query = s2.NewContainsPointQuery(dataset.index, s2.VertexModelOpen)
+	}
+	res := dataset.query.ContainingShapes(pointFromCoord(loc))
 	if len(res) == 0 {
 		return Location{}, ErrLocationNotFound
 	}
