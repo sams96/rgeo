@@ -170,8 +170,7 @@ func TestReverseGeocode_Countries(t *testing.T) {
 		},
 	}
 
-	datasets := []func() *rgeo{Countries110, Countries50, Countries10,
-		Provinces10}
+	datasets := []func() *rgeo{Countries110, Countries50, Countries10, Provinces10}
 
 	for i, dataset := range datasets {
 
