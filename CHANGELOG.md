@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
  - JSON strings in `Location` for more idiomatic marshalling .
  - datagen can now read multiple inputs to one output.
  - 1:50m and 1:10m scale datasets
+ - Datasets are returned from functions so the compiler doesn't include unused
+   ones in builds
 
 ## [0.0.4] - 2020-02-20
 

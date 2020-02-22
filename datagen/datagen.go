@@ -33,31 +33,35 @@ package rgeo
 
 import geom "github.com/twpayne/go-geom"
 
-var {{.Varname}} = rgeo{[]country{
-	{{- range .Countries}}
-	{
-		loc: Location{
-			Country:      "{{.Loc.Country}}",
-			CountryLong:  "{{.Loc.CountryLong}}",
-			CountryCode2: "{{.Loc.CountryCode2}}",
-			CountryCode3: "{{.Loc.CountryCode3}}",
-			Continent:    "{{.Loc.Continent}}",
-			Region:       "{{.Loc.Region}}",
-			SubRegion:    "{{.Loc.SubRegion}}",
+// {{.Varname}} {{.Comment}}
+func {{.Varname}} () *rgeo {
+	return &rgeo{[]country{
+		{{- range .Countries}}
+		{
+			loc: Location{
+				Country:      "{{.Loc.Country}}",
+				CountryLong:  "{{.Loc.CountryLong}}",
+				CountryCode2: "{{.Loc.CountryCode2}}",
+				CountryCode3: "{{.Loc.CountryCode3}}",
+				Continent:    "{{.Loc.Continent}}",
+				Region:       "{{.Loc.Region}}",
+				SubRegion:    "{{.Loc.SubRegion}}",
+			},
+			{{- if .Multi}}
+			geo: geom.NewMultiPolygonFlat(geom.{{.Layout}}, {{.Flatcoords}}, {{.Ends}}),
+			{{- else}}
+			geo: geom.NewPolygonFlat(geom.{{.Layout}}, {{.Flatcoords}}, {{.Ends}}),
+			{{- end}}
 		},
-		{{- if .Multi}}
-		geo: geom.NewMultiPolygonFlat(geom.{{.Layout}}, {{.Flatcoords}}, {{.Ends}}),
-		{{- else}}
-		geo: geom.NewPolygonFlat(geom.{{.Layout}}, {{.Flatcoords}}, {{.Ends}}),
 		{{- end}}
-	},
-	{{- end}}
-}}
+	}}
+}
 `
 
 // viewData fills template tp
 type viewData struct {
 	Varname   string
+	Comment   string
 	Countries []tpcountry
 }
 
@@ -74,6 +78,7 @@ type tpcountry struct {
 func main() {
 	// Read args
 	outFileName := flag.String("o", "", "Path to output file")
+	neCommentFlag := flag.Bool("ne", false, "Use Natural earth comment")
 
 	flag.Parse()
 
@@ -88,7 +93,7 @@ func main() {
 	}
 
 	// Open outfile
-	outfile, err := os.Create(os.Args[2])
+	outfile, err := os.Create(*outFileName)
 	if err != nil {
 		panic(err)
 	}
@@ -96,13 +101,21 @@ func main() {
 
 	w := bufio.NewWriter(outfile)
 
+	var pre string
+	if *neCommentFlag {
+		pre = "https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/"
+	}
+	vd := viewData{
+		Varname:   strings.TrimSuffix(*outFileName, ".go"),
+		Comment:   "uses data from " + printSlice(prefixSlice(pre, flag.Args())),
+		Countries: feats,
+	}
+
 	// Create template
 	tmpl, err := template.New("tmpl").Parse(tp)
 	if err != nil {
 		panic(err)
 	}
-
-	vd := viewData{strings.TrimSuffix(os.Args[2], ".go"), feats}
 
 	// Write template
 	err = tmpl.ExecuteTemplate(w, "tmpl", vd)
@@ -217,4 +230,28 @@ func getLocationStrings(p map[string]interface{}) rgeo.Location {
 		Region:       region,
 		SubRegion:    subregion,
 	}
+}
+
+// printSlice prints a slice of strings with commas and an ampersand if needed
+func printSlice(in []string) string {
+	n := len(in)
+	switch n {
+	case 0:
+		return ""
+	case 1:
+		return in[0]
+	case 2:
+		return strings.Join(in, " & ")
+	default:
+		return printSlice([]string{strings.Join(in[:n-1], ", "), in[n-1]})
+	}
+}
+
+// prefix slice adds a given prefix to a slice of strings
+func prefixSlice(pre string, slice []string) (ret []string) {
+	for _, i := range slice {
+		ret = append(ret, pre+i)
+	}
+
+	return
 }

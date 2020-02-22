@@ -64,7 +64,10 @@ type rgeo struct {
 // in the zeroth position and the latitude in the first position.
 // (i.e. []float64{lon, lat})
 //
-// When run without a type rgeo it re-creates the polygons every time
+// The datasets currently available are Countries110, Countries50 & Countries10,
+// these are returned from functions so the go compiler will ignore any that you
+// aren't using. If using ReverseGeocode multiple times I would advise you to
+// get the value from the function as a variable first and use that
 func ReverseGeocode(loc geom.Coord, dataset *rgeo) (Location, error) {
 	for _, feature := range dataset.countries {
 		if in := geometryContainsCoord(feature.geo, loc); in {

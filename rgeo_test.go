@@ -170,12 +170,14 @@ func TestReverseGeocode(t *testing.T) {
 		},
 	}
 
-	for i, dataset := range []*rgeo{&Countries110, &Countries50, &Countries10} {
+	datasets := []func() *rgeo{Countries110, Countries50, Countries10}
+
+	for i, dataset := range datasets {
 
 		for _, test := range tests {
 			test := test
 			t.Run(test.name, func(t *testing.T) {
-				result, err := ReverseGeocode(test.in, dataset)
+				result, err := ReverseGeocode(test.in, dataset())
 				if err != test.err {
 					t.Errorf("expected error: %s\n got: %s\n", test.err, err)
 				}
@@ -232,7 +234,8 @@ func TestString(t *testing.T) {
 }
 
 func ExampleReverseGeocode() {
-	loc, err := ReverseGeocode([]float64{0, 52}, &Countries110)
+	dataset := Countries110()
+	loc, err := ReverseGeocode([]float64{0, 52}, dataset)
 	if err != nil {
 		// Handle error
 	}
@@ -259,7 +262,17 @@ func BenchmarkReverseGeocode_110(b *testing.B) {
 		_, _ = ReverseGeocode([]float64{
 			(rand.Float64() * 360) - 180,
 			(rand.Float64() * 180) - 90,
-		}, &Countries110)
+		}, Countries110())
+	}
+}
+
+func BenchmarkReverseGeocode_110Pre(b *testing.B) {
+	dataset := Countries110()
+	for i := 0; i < b.N; i++ {
+		_, _ = ReverseGeocode([]float64{
+			(rand.Float64() * 360) - 180,
+			(rand.Float64() * 180) - 90,
+		}, dataset)
 	}
 }
 
@@ -268,7 +281,17 @@ func BenchmarkReverseGeocode_50(b *testing.B) {
 		_, _ = ReverseGeocode([]float64{
 			(rand.Float64() * 360) - 180,
 			(rand.Float64() * 180) - 90,
-		}, &Countries50)
+		}, Countries50())
+	}
+}
+
+func BenchmarkReverseGeocode_50Pre(b *testing.B) {
+	dataset := Countries50()
+	for i := 0; i < b.N; i++ {
+		_, _ = ReverseGeocode([]float64{
+			(rand.Float64() * 360) - 180,
+			(rand.Float64() * 180) - 90,
+		}, dataset)
 	}
 }
 
@@ -277,6 +300,16 @@ func BenchmarkReverseGeocode_10(b *testing.B) {
 		_, _ = ReverseGeocode([]float64{
 			(rand.Float64() * 360) - 180,
 			(rand.Float64() * 180) - 90,
-		}, &Countries10)
+		}, Countries10())
+	}
+}
+
+func BenchmarkReverseGeocode_10Pre(b *testing.B) {
+	dataset := Countries10()
+	for i := 0; i < b.N; i++ {
+		_, _ = ReverseGeocode([]float64{
+			(rand.Float64() * 360) - 180,
+			(rand.Float64() * 180) - 90,
+		}, dataset)
 	}
 }

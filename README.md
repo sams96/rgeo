@@ -22,7 +22,8 @@ the data beforehand (links to which are in the files).
 ## Usage
 
 ```go
-loc, err := ReverseGeocode([]float64{0, 52}, &Countries110)
+dataset := rgeo.Countries110()
+loc, err := rgeo.ReverseGeocode([]float64{0, 52}, dataset)
 if err != nil {
 	// Handle error
 }
