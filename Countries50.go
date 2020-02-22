@@ -5,7 +5,7 @@ package rgeo
 import geom "github.com/twpayne/go-geom"
 
 // Countries50 uses data from https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_50m_admin_0_countries.geojson
-func Countries50 () *rgeo {
+func Countries50() *rgeo {
 	return &rgeo{[]country{
 		{
 			loc: Location{

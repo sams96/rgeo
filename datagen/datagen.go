@@ -34,7 +34,7 @@ package rgeo
 import geom "github.com/twpayne/go-geom"
 
 // {{.Varname}} {{.Comment}}
-func {{.Varname}} () *rgeo {
+func {{.Varname}}() *rgeo {
 	return &rgeo{[]country{
 		{{- range .Countries}}
 		{
@@ -79,6 +79,7 @@ func main() {
 	// Read args
 	outFileName := flag.String("o", "", "Path to output file")
 	neCommentFlag := flag.Bool("ne", false, "Use Natural earth comment")
+	mergeFileName := flag.String("merge", "", "File to get extra info from")
 
 	flag.Parse()
 
@@ -87,7 +88,7 @@ func main() {
 		return
 	}
 
-	feats, err := readInputs(flag.Args())
+	feats, err := readInputs(flag.Args(), *mergeFileName)
 	if err != nil {
 		panic(err)
 	}
@@ -105,9 +106,15 @@ func main() {
 	if *neCommentFlag {
 		pre = "https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/"
 	}
+
+	files := flag.Args()
+	if *mergeFileName != "" {
+		files = append(files, *mergeFileName)
+	}
+
 	vd := viewData{
 		Varname:   strings.TrimSuffix(*outFileName, ".go"),
-		Comment:   "uses data from " + printSlice(prefixSlice(pre, flag.Args())),
+		Comment:   "uses data from " + printSlice(prefixSlice(pre, files)),
 		Countries: feats,
 	}
 
@@ -126,45 +133,71 @@ func main() {
 	w.Flush()
 }
 
-func readInputs(in []string) ([]tpcountry, error) {
+func readInputs(in []string, mergeFileName string) ([]tpcountry, error) {
 	var feats []tpcountry
 
+	var mergeData *[]tpcountry
+	if mergeFileName != "" {
+		md, err := readInput(mergeFileName, false, nil)
+		if err != nil {
+			return []tpcountry{}, err
+		}
+		mergeData = &md
+	}
+
 	for _, f := range in {
-		// Open infile
-		infile, err := os.Open(f)
+		s, err := readInput(f, true, mergeData)
 		if err != nil {
 			return []tpcountry{}, err
 		}
 
-		// Parse geojson
-		var fc geojson.FeatureCollection
-		if err := json.NewDecoder(infile).Decode(&fc); err != nil {
-			return []tpcountry{}, err
-		}
+		feats = append(feats, s...)
+	}
 
-		var (
-			thisCountry tpcountry
-		)
+	return feats, nil
+}
 
-		for _, c := range fc.Features {
-			thisCountry.Loc = getLocationStrings(c.Properties)
+func readInput(f string, withGeo bool, mergeData *[]tpcountry) ([]tpcountry, error) {
+	// Open infile
+	infile, err := os.Open(f)
+	if err != nil {
+		return []tpcountry{}, err
+	}
 
-			switch g := c.Geometry.(type) {
-			case *geom.Polygon:
-				thisCountry.Multi = false
-				thisCountry.Ends = stringFromSlice(g.Ends())
-			case *geom.MultiPolygon:
-				thisCountry.Multi = true
-				thisCountry.Ends = stringFromSlice(g.Endss())
-			}
+	defer infile.Close()
 
-			thisCountry.Layout = fmt.Sprint(c.Geometry.Layout())
-			thisCountry.Flatcoords = stringFromSlice(c.Geometry.FlatCoords())
+	// Parse geojson
+	var fc geojson.FeatureCollection
+	if err := json.NewDecoder(infile).Decode(&fc); err != nil {
+		return []tpcountry{}, err
+	}
 
+	var (
+		thisCountry tpcountry
+		feats       []tpcountry
+	)
+
+	for _, c := range fc.Features {
+		thisCountry.Loc = getLocationStrings(c.Properties, mergeData)
+
+		if !withGeo {
 			feats = append(feats, thisCountry)
+			continue
 		}
 
-		infile.Close()
+		switch g := c.Geometry.(type) {
+		case *geom.Polygon:
+			thisCountry.Multi = false
+			thisCountry.Ends = stringFromSlice(g.Ends())
+		case *geom.MultiPolygon:
+			thisCountry.Multi = true
+			thisCountry.Ends = stringFromSlice(g.Endss())
+		}
+
+		thisCountry.Layout = fmt.Sprint(c.Geometry.Layout())
+		thisCountry.Flatcoords = stringFromSlice(c.Geometry.FlatCoords())
+
+		feats = append(feats, thisCountry)
 	}
 
 	return feats, nil
@@ -182,7 +215,7 @@ func stringFromSlice(i interface{}) string {
 }
 
 // Get the relevant strings from the geojson properties
-func getLocationStrings(p map[string]interface{}) rgeo.Location {
+func getLocationStrings(p map[string]interface{}, mergeData *[]tpcountry) rgeo.Location {
 	country, ok := p["ADMIN"].(string)
 	if !ok {
 		country, ok = p["admin"].(string)
@@ -191,34 +224,39 @@ func getLocationStrings(p map[string]interface{}) rgeo.Location {
 		}
 	}
 
+	var md rgeo.Location
+	if mergeData != nil {
+		md = findByCountry(country, mergeData)
+	}
+
 	countrylong, ok := p["FORMAL_EN"].(string)
 	if !ok {
-		countrylong = ""
+		countrylong = md.CountryLong
 	}
 
 	countrycode2, ok := p["ISO_A2"].(string)
 	if !ok {
-		countrycode2 = ""
+		countrycode2 = md.CountryCode2
 	}
 
 	countrycode3, ok := p["ISO_A3"].(string)
 	if !ok {
-		countrycode3 = ""
+		countrycode3 = md.CountryCode3
 	}
 
 	continent, ok := p["CONTINENT"].(string)
 	if !ok {
-		continent = ""
+		continent = md.Continent
 	}
 
 	region, ok := p["REGION_UN"].(string)
 	if !ok {
-		region = ""
+		region = md.Region
 	}
 
 	subregion, ok := p["SUBREGION"].(string)
 	if !ok {
-		subregion = ""
+		subregion = md.SubRegion
 	}
 
 	return rgeo.Location{
@@ -230,6 +268,16 @@ func getLocationStrings(p map[string]interface{}) rgeo.Location {
 		Region:       region,
 		SubRegion:    subregion,
 	}
+}
+
+func findByCountry(country string, mergeData *[]tpcountry) rgeo.Location {
+	for _, f := range *mergeData {
+		if f.Loc.Country == country {
+			return f.Loc
+		}
+	}
+
+	return rgeo.Location{}
 }
 
 // printSlice prints a slice of strings with commas and an ampersand if needed
