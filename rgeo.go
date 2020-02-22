@@ -22,6 +22,10 @@ just make an issue first.
 package rgeo
 
 import (
+	"encoding/hex"
+	"strings"
+
+	"github.com/golang/geo/s2"
 	"github.com/pkg/errors"
 	geom "github.com/twpayne/go-geom"
 	"github.com/twpayne/go-geom/xy"
@@ -50,7 +54,7 @@ type Location struct {
 // country hold the Polygon and Location for one country
 type country struct {
 	loc Location
-	geo geom.T
+	geo *s2.Polygon
 }
 
 // rgeo is the type used to hold pre-created polygons for reverse geocoding
@@ -70,7 +74,7 @@ type rgeo struct {
 // get the value from the function as a variable first and use that
 func ReverseGeocode(loc geom.Coord, dataset *rgeo) (Location, error) {
 	for _, feature := range dataset.countries {
-		if in := geometryContainsCoord(feature.geo, loc); in {
+		if in := feature.geo.ContainsPoint(pointFromCoord(loc)); in {
 			return feature.loc, nil
 		}
 	}
@@ -150,4 +154,19 @@ func multiPolygonContainsCoord(g *geom.MultiPolygon, pt geom.Coord) bool {
 	}
 
 	return false
+}
+
+// From github.com/dgraph-io/dgraph
+func pointFromCoord(r geom.Coord) s2.Point {
+	// The geojson spec says that coordinates are specified as [long, lat]
+	// We assume that any data encoded in the database follows that format.
+	ll := s2.LatLngFromDegrees(r.Y(), r.X())
+	return s2.PointFromLatLng(ll)
+}
+
+func decode(in string) *s2.Polygon {
+	decode, _ := hex.DecodeString(in)
+	p := new(s2.Polygon)
+	p.Decode(strings.NewReader(string(decode)))
+	return p
 }

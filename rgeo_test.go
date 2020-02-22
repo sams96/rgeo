@@ -156,7 +156,7 @@ func TestReverseGeocode_Countries(t *testing.T) {
 		},
 		{
 			name: "Canada Border",
-			in:   []float64{-102.560616, 49.0},
+			in:   []float64{-102.560616, 49.02},
 			err:  nil,
 			expected: Location{
 				Country:      "Canada",
@@ -315,7 +315,7 @@ func BenchmarkReverseGeocode_10Pre(b *testing.B) {
 	}
 }
 
-func BenchmarkReverseGeocode_Prov(b *testing.B) {
+func BenchmarkReverseGeocode_Prov10(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		_, _ = ReverseGeocode([]float64{
 			(rand.Float64() * 360) - 180,
@@ -324,7 +324,7 @@ func BenchmarkReverseGeocode_Prov(b *testing.B) {
 	}
 }
 
-func BenchmarkReverseGeocode_ProvPre(b *testing.B) {
+func BenchmarkReverseGeocode_Prov10Pre(b *testing.B) {
 	dataset := Provinces10()
 	for i := 0; i < b.N; i++ {
 		_, _ = ReverseGeocode([]float64{

@@ -14,6 +14,8 @@ package main
 
 import (
 	"bufio"
+	"bytes"
+	"encoding/hex"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -21,6 +23,8 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/golang/geo/s2"
+	"github.com/pkg/errors"
 	"github.com/sams96/rgeo"
 	geom "github.com/twpayne/go-geom"
 	"github.com/twpayne/go-geom/encoding/geojson"
@@ -30,8 +34,6 @@ import (
 const tp = `// This file is generated
 
 package rgeo
-
-import geom "github.com/twpayne/go-geom"
 
 // {{.Varname}} {{.Comment}}
 func {{.Varname}}() *rgeo {
@@ -47,11 +49,7 @@ func {{.Varname}}() *rgeo {
 				Region:       "{{.Loc.Region}}",
 				SubRegion:    "{{.Loc.SubRegion}}",
 			},
-			{{- if .Multi}}
-			geo: geom.NewMultiPolygonFlat(geom.{{.Layout}}, {{.Flatcoords}}, {{.Ends}}),
-			{{- else}}
-			geo: geom.NewPolygonFlat(geom.{{.Layout}}, {{.Flatcoords}}, {{.Ends}}),
-			{{- end}}
+			geo: decode("{{.Geo}}"),
 		},
 		{{- end}}
 	}}
@@ -69,10 +67,7 @@ type viewData struct {
 type tpcountry struct {
 	Loc rgeo.Location
 
-	Multi      bool
-	Layout     string
-	Flatcoords string
-	Ends       string
+	Geo string
 }
 
 func main() {
@@ -185,17 +180,18 @@ func readInput(f string, withGeo bool, mergeData *[]tpcountry) ([]tpcountry, err
 			continue
 		}
 
-		switch g := c.Geometry.(type) {
-		case *geom.Polygon:
-			thisCountry.Multi = false
-			thisCountry.Ends = stringFromSlice(g.Ends())
-		case *geom.MultiPolygon:
-			thisCountry.Multi = true
-			thisCountry.Ends = stringFromSlice(g.Endss())
+		p, err := polygonFromGeometry(c.Geometry)
+		if err != nil {
+			return []tpcountry{}, err
 		}
 
-		thisCountry.Layout = fmt.Sprint(c.Geometry.Layout())
-		thisCountry.Flatcoords = stringFromSlice(c.Geometry.FlatCoords())
+		buf := new(bytes.Buffer)
+		err = p.Encode(buf)
+		if err != nil {
+			return []tpcountry{}, err
+		}
+
+		thisCountry.Geo = hex.EncodeToString(buf.Bytes())
 
 		feats = append(feats, thisCountry)
 	}
@@ -302,4 +298,141 @@ func prefixSlice(pre string, slice []string) (ret []string) {
 	}
 
 	return
+}
+
+// polygonFromGeometry converts a geom.T to an s2.Polygon
+func polygonFromGeometry(g geom.T) (*s2.Polygon, error) {
+	var (
+		polygon *s2.Polygon
+		err     error
+	)
+
+	switch t := g.(type) {
+	case *geom.Polygon:
+		polygon, err = polygonFromPolygon(t)
+	case *geom.MultiPolygon:
+		polygon, err = polygonFromMultiPolygon(t)
+	default:
+		return nil, errors.Errorf("needs geom.Polygon or geom.MultiPolygon")
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	return polygon, nil
+}
+
+// Converts a `*geom.MultiPolygon` to an `*s2.Polygon`
+func polygonFromMultiPolygon(p *geom.MultiPolygon) (*s2.Polygon, error) {
+	var loops []*s2.Loop
+
+	for i := 0; i < p.NumPolygons(); i++ {
+		this, err := loopSliceFromPolygon(p.Polygon(i))
+		if err != nil {
+			return nil, err
+		}
+
+		loops = append(loops, this...)
+	}
+
+	return s2.PolygonFromLoops(loops), nil
+}
+
+// Converts a `*geom.Polygon` to an `*s2.Polygon`
+func polygonFromPolygon(p *geom.Polygon) (*s2.Polygon, error) {
+	loops, err := loopSliceFromPolygon(p)
+	return s2.PolygonFromLoops(loops), err
+}
+
+// Converts a `*geom.Polygon` to slice of `*s2.Loop`
+//
+// Modified from types.loopFromPolygon from github.com/dgraph-io/dgraph
+func loopSliceFromPolygon(p *geom.Polygon) ([]*s2.Loop, error) {
+	var loops []*s2.Loop
+
+	for i := 0; i < p.NumLinearRings(); i++ {
+		r := p.LinearRing(i)
+		n := r.NumCoords()
+
+		if n < 4 {
+			return nil, errors.Errorf("Can't convert ring with less than 4 pts")
+		}
+
+		if !r.Coord(0).Equal(geom.XY, r.Coord(n-1)) {
+			return nil, errors.Errorf(
+				"Last coordinate not same as first for polygon: %+v\n", p)
+		}
+
+		// S2 specifies that the orientation of the polygons should be CCW.
+		// However there is no restriction on the orientation in WKB (or
+		// geojson). To get the correct orientation we assume that the polygons
+		// are always less than one hemisphere. If they are bigger, we flip the
+		// orientation.
+		reverse := isClockwise(r)
+		l := loopFromRing(r, reverse)
+
+		// Since our clockwise check was approximate, we check the cap and
+		// reverse if needed.
+		if l.CapBound().Radius().Degrees() > 90 {
+			// Remaking the loop sometimes caused problems, this works better
+			l.Invert()
+		}
+
+		loops = append(loops, l)
+	}
+
+	return loops, nil
+}
+
+// Checks if a ring is clockwise or counter-clockwise. Note: This uses the
+// algorithm for planar polygons and doesn't work for spherical polygons that
+// contain the poles or the antimeridan discontinuity. We use this as a fast
+// approximation instead.
+//
+// From github.com/dgraph-io/dgraph
+func isClockwise(r *geom.LinearRing) bool {
+	// The algorithm is described here
+	// https://en.wikipedia.org/wiki/Shoelace_formula
+	var a float64
+
+	n := r.NumCoords()
+
+	for i := 0; i < n; i++ {
+		p1 := r.Coord(i)
+		p2 := r.Coord((i + 1) % n)
+		a += (p2.X() - p1.X()) * (p1.Y() + p2.Y())
+	}
+
+	return a > 0
+}
+
+// From github.com/dgraph-io/dgraph
+func loopFromRing(r *geom.LinearRing, reverse bool) *s2.Loop {
+	// In WKB, the last coordinate is repeated for a ring to form a closed loop.
+	// For s2 the points aren't allowed to repeat and the loop is assumed to be
+	// closed, so we skip the last point.
+	n := r.NumCoords()
+	pts := make([]s2.Point, n-1)
+
+	for i := 0; i < n-1; i++ {
+		var c geom.Coord
+		if reverse {
+			c = r.Coord(n - 1 - i)
+		} else {
+			c = r.Coord(i)
+		}
+
+		pts[i] = pointFromCoord(c)
+	}
+
+	return s2.LoopFromPoints(pts)
+}
+
+// From github.com/dgraph-io/dgraph
+func pointFromCoord(r geom.Coord) s2.Point {
+	// The geojson spec says that coordinates are specified as [long, lat]
+	// We assume that any data encoded in the database follows that format.
+	ll := s2.LatLngFromDegrees(r.Y(), r.X())
+	return s2.PointFromLatLng(ll)
 }
