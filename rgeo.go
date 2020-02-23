@@ -50,7 +50,7 @@ type Location struct {
 	SubRegion string `json:"subregion,omitempty"`
 }
 
-// rgeo is the type used to hold pre-created polygons for reverse geocoding
+// Rgeo is the type used to hold pre-created polygons for reverse geocoding
 type Rgeo struct {
 	index *s2.ShapeIndex
 	locs  map[s2.Shape]Location

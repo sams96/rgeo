@@ -7,12 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [0.0.5] - 2020-02-23
+
 ### Added
  - JSON strings in `Location` for more idiomatic marshalling .
  - datagen can now read multiple inputs to one output.
- - 1:50m and 1:10m scale datasets
+ - 1:10m scale datasets for countries and provinces
  - Datasets are returned from functions so the compiler doesn't include unused
    ones in builds
+ - Brought back the `New` function to initialise the data
+
+### Changes
+ - Massive speed increase on queries
+ - Data initialisation is probably slower
 
 ## [0.0.4] - 2020-02-20
 
