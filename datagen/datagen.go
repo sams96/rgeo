@@ -1,21 +1,18 @@
 /*
-Command datagen converts geojson files into go files containing structs that can
-be read by rgeo. You can use this if you want to use a different dataset to any
-of those included.
+Command datagen converts geojson files into go files containing functions that
+return the geojson, it can also merge properties from one geojson file into
+another using the -merge flag.
 
 Usage
 
 	go run datagen.go -o outfile.go infile.geojson
 
-The variable containing the data will be named outfile. Currently rgeo will only
-look for at the variable called countries110.
+The variable containing the data will be named outfile.
 */
 package main
 
 import (
 	"bufio"
-	"bytes"
-	"encoding/hex"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -24,55 +21,16 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/golang/geo/s2"
-	"github.com/pkg/errors"
-	"github.com/sams96/rgeo"
-	geom "github.com/twpayne/go-geom"
 	"github.com/twpayne/go-geom/encoding/geojson"
 )
 
-// Template for generated code
-const tp = `// This file is generated
-
-package rgeo
-
-import "github.com/golang/geo/s2"
-
-// {{.Varname}} {{.Comment}}
-func {{.Varname}}() *rgeo {
-	index := s2.NewShapeIndex()
-	locs := make(map[s2.Shape]Location)
-	var s *s2.Polygon
-	{{- range .Countries}}
-	s = decode("{{.Geo}}")
-	index.Add(s)
-	locs[s] = Location{
-		Country:      "{{.Loc.Country}}",
-		CountryLong:  "{{.Loc.CountryLong}}",
-		CountryCode2: "{{.Loc.CountryCode2}}",
-		CountryCode3: "{{.Loc.CountryCode3}}",
-		Continent:    "{{.Loc.Continent}}",
-		Region:       "{{.Loc.Region}}",
-		SubRegion:    "{{.Loc.SubRegion}}",
-	}
-	{{- end}}
-	return &rgeo{index, locs, nil}
-}
-
-`
+const tp = "datagen/datagen.tmpl"
 
 // viewData fills template tp
 type viewData struct {
-	Varname   string
-	Comment   string
-	Countries []tpcountry
-}
-
-// tpcountry holds country data
-type tpcountry struct {
-	Loc rgeo.Location
-
-	Geo string
+	Varname string
+	Comment string
+	JSON    string
 }
 
 func main() {
@@ -112,20 +70,29 @@ func main() {
 		files = append(files, *mergeFileName)
 	}
 
+	resp, err := json.Marshal(feats)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	vd := viewData{
-		Varname:   strings.TrimSuffix(*outFileName, ".go"),
-		Comment:   "uses data from " + printSlice(prefixSlice(pre, files)),
-		Countries: feats,
+		Varname: strings.TrimSuffix(*outFileName, ".go"),
+		Comment: "uses data from " + printSlice(prefixSlice(pre, files)),
+
+		// I know this looks rediculous, but it replaces backticks (which will
+		// break the string) with `+"`"+`, which breaks the string, adds a
+		// backtick and then restarts it
+		JSON: strings.ReplaceAll(string(resp), "`", "`"+`+"`+"`"+`"+`+"`"),
 	}
 
 	// Create template
-	tmpl, err := template.New("tmpl").Parse(tp)
+	tmpl, err := template.ParseFiles(tp)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// Write template
-	err = tmpl.ExecuteTemplate(w, "tmpl", vd)
+	err = tmpl.ExecuteTemplate(w, "datagen.tmpl", vd)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -133,35 +100,35 @@ func main() {
 	w.Flush()
 }
 
-func readInputs(in []string, mergeFileName string) ([]tpcountry, error) {
-	var feats []tpcountry
+func readInputs(in []string, mergeFileName string) (*geojson.FeatureCollection, error) {
+	fc := new(geojson.FeatureCollection)
 
-	var mergeData *[]tpcountry
+	var mergeData *geojson.FeatureCollection
 	if mergeFileName != "" {
-		md, err := readInput(mergeFileName, false, nil)
+		md, err := readInput(mergeFileName, nil)
 		if err != nil {
-			return []tpcountry{}, err
+			return nil, err
 		}
-		mergeData = &md
+		mergeData = md
 	}
 
 	for _, f := range in {
-		s, err := readInput(f, true, mergeData)
+		s, err := readInput(f, mergeData)
 		if err != nil {
-			return []tpcountry{}, err
+			return nil, err
 		}
 
-		feats = append(feats, s...)
+		fc.Features = append(fc.Features, s.Features...)
 	}
 
-	return feats, nil
+	return fc, nil
 }
 
-func readInput(f string, withGeo bool, mergeData *[]tpcountry) ([]tpcountry, error) {
+func readInput(f string, mergeData *geojson.FeatureCollection) (*geojson.FeatureCollection, error) {
 	// Open infile
 	infile, err := os.Open(f)
 	if err != nil {
-		return []tpcountry{}, err
+		return nil, err
 	}
 
 	defer infile.Close()
@@ -169,116 +136,30 @@ func readInput(f string, withGeo bool, mergeData *[]tpcountry) ([]tpcountry, err
 	// Parse geojson
 	var fc geojson.FeatureCollection
 	if err := json.NewDecoder(infile).Decode(&fc); err != nil {
-		return []tpcountry{}, err
+		return nil, err
 	}
 
-	var (
-		thisCountry tpcountry
-		feats       []tpcountry
-	)
-
-	for _, c := range fc.Features {
-		thisCountry.Loc = getLocationStrings(c.Properties, mergeData)
-
-		if !withGeo {
-			feats = append(feats, thisCountry)
-			continue
-		}
-
-		p, err := polygonFromGeometry(c.Geometry)
-		if err != nil {
-			return []tpcountry{}, err
-		}
-
-		buf := new(bytes.Buffer)
-		err = p.Encode(buf)
-		if err != nil {
-			return []tpcountry{}, err
-		}
-
-		thisCountry.Geo = hex.EncodeToString(buf.Bytes())
-
-		feats = append(feats, thisCountry)
+	if mergeData == nil {
+		return &fc, nil
 	}
 
-	return feats, nil
-}
-
-// stringFromSlice creates a string to represent a slice in generated code
-func stringFromSlice(i interface{}) string {
-	return fmt.Sprintf("%T%s", i,
-		strings.ReplaceAll(
-			strings.ReplaceAll(
-				strings.Join(strings.Fields(fmt.Sprint(i)), ", "),
-				"[", "{"),
-			"]", "}"),
-	)
-}
-
-// Get the relevant strings from the geojson properties
-func getLocationStrings(p map[string]interface{}, mergeData *[]tpcountry) rgeo.Location {
-	country, ok := p["ADMIN"].(string)
-	if !ok {
-		country, ok = p["admin"].(string)
+	for _, feat := range fc.Features {
+		country, ok := feat.Properties["admin"].(string)
 		if !ok {
-			country = ""
+			log.Println("Country name in wrong place")
+			break
+		}
+
+		for _, md := range mergeData.Features {
+			if md.Properties["ADMIN"] == country {
+				for k, v := range md.Properties {
+					feat.Properties[k] = v
+				}
+			}
 		}
 	}
 
-	var md rgeo.Location
-	if mergeData != nil {
-		md = findByCountry(country, mergeData)
-	}
-
-	countrylong, ok := p["FORMAL_EN"].(string)
-	if !ok {
-		countrylong = md.CountryLong
-	}
-
-	countrycode2, ok := p["ISO_A2"].(string)
-	if !ok {
-		countrycode2 = md.CountryCode2
-	}
-
-	countrycode3, ok := p["ISO_A3"].(string)
-	if !ok {
-		countrycode3 = md.CountryCode3
-	}
-
-	continent, ok := p["CONTINENT"].(string)
-	if !ok {
-		continent = md.Continent
-	}
-
-	region, ok := p["REGION_UN"].(string)
-	if !ok {
-		region = md.Region
-	}
-
-	subregion, ok := p["SUBREGION"].(string)
-	if !ok {
-		subregion = md.SubRegion
-	}
-
-	return rgeo.Location{
-		Country:      country,
-		CountryLong:  countrylong,
-		CountryCode2: countrycode2,
-		CountryCode3: countrycode3,
-		Continent:    continent,
-		Region:       region,
-		SubRegion:    subregion,
-	}
-}
-
-func findByCountry(country string, mergeData *[]tpcountry) rgeo.Location {
-	for _, f := range *mergeData {
-		if f.Loc.Country == country {
-			return f.Loc
-		}
-	}
-
-	return rgeo.Location{}
+	return &fc, nil
 }
 
 // printSlice prints a slice of strings with commas and an ampersand if needed
@@ -303,141 +184,4 @@ func prefixSlice(pre string, slice []string) (ret []string) {
 	}
 
 	return
-}
-
-// polygonFromGeometry converts a geom.T to an s2.Polygon
-func polygonFromGeometry(g geom.T) (*s2.Polygon, error) {
-	var (
-		polygon *s2.Polygon
-		err     error
-	)
-
-	switch t := g.(type) {
-	case *geom.Polygon:
-		polygon, err = polygonFromPolygon(t)
-	case *geom.MultiPolygon:
-		polygon, err = polygonFromMultiPolygon(t)
-	default:
-		return nil, errors.Errorf("needs geom.Polygon or geom.MultiPolygon")
-	}
-
-	if err != nil {
-		return nil, err
-	}
-
-	return polygon, nil
-}
-
-// Converts a `*geom.MultiPolygon` to an `*s2.Polygon`
-func polygonFromMultiPolygon(p *geom.MultiPolygon) (*s2.Polygon, error) {
-	var loops []*s2.Loop
-
-	for i := 0; i < p.NumPolygons(); i++ {
-		this, err := loopSliceFromPolygon(p.Polygon(i))
-		if err != nil {
-			return nil, err
-		}
-
-		loops = append(loops, this...)
-	}
-
-	return s2.PolygonFromLoops(loops), nil
-}
-
-// Converts a `*geom.Polygon` to an `*s2.Polygon`
-func polygonFromPolygon(p *geom.Polygon) (*s2.Polygon, error) {
-	loops, err := loopSliceFromPolygon(p)
-	return s2.PolygonFromLoops(loops), err
-}
-
-// Converts a `*geom.Polygon` to slice of `*s2.Loop`
-//
-// Modified from types.loopFromPolygon from github.com/dgraph-io/dgraph
-func loopSliceFromPolygon(p *geom.Polygon) ([]*s2.Loop, error) {
-	var loops []*s2.Loop
-
-	for i := 0; i < p.NumLinearRings(); i++ {
-		r := p.LinearRing(i)
-		n := r.NumCoords()
-
-		if n < 4 {
-			return nil, errors.Errorf("Can't convert ring with less than 4 pts")
-		}
-
-		if !r.Coord(0).Equal(geom.XY, r.Coord(n-1)) {
-			return nil, errors.Errorf(
-				"Last coordinate not same as first for polygon: %+v\n", p)
-		}
-
-		// S2 specifies that the orientation of the polygons should be CCW.
-		// However there is no restriction on the orientation in WKB (or
-		// geojson). To get the correct orientation we assume that the polygons
-		// are always less than one hemisphere. If they are bigger, we flip the
-		// orientation.
-		reverse := isClockwise(r)
-		l := loopFromRing(r, reverse)
-
-		// Since our clockwise check was approximate, we check the cap and
-		// reverse if needed.
-		if l.CapBound().Radius().Degrees() > 90 {
-			// Remaking the loop sometimes caused problems, this works better
-			l.Invert()
-		}
-
-		loops = append(loops, l)
-	}
-
-	return loops, nil
-}
-
-// Checks if a ring is clockwise or counter-clockwise. Note: This uses the
-// algorithm for planar polygons and doesn't work for spherical polygons that
-// contain the poles or the antimeridan discontinuity. We use this as a fast
-// approximation instead.
-//
-// From github.com/dgraph-io/dgraph
-func isClockwise(r *geom.LinearRing) bool {
-	// The algorithm is described here
-	// https://en.wikipedia.org/wiki/Shoelace_formula
-	var a float64
-
-	n := r.NumCoords()
-
-	for i := 0; i < n; i++ {
-		p1 := r.Coord(i)
-		p2 := r.Coord((i + 1) % n)
-		a += (p2.X() - p1.X()) * (p1.Y() + p2.Y())
-	}
-
-	return a > 0
-}
-
-// From github.com/dgraph-io/dgraph
-func loopFromRing(r *geom.LinearRing, reverse bool) *s2.Loop {
-	// In WKB, the last coordinate is repeated for a ring to form a closed loop.
-	// For s2 the points aren't allowed to repeat and the loop is assumed to be
-	// closed, so we skip the last point.
-	n := r.NumCoords()
-	pts := make([]s2.Point, n-1)
-
-	for i := 0; i < n-1; i++ {
-		var c geom.Coord
-		if reverse {
-			c = r.Coord(n - 1 - i)
-		} else {
-			c = r.Coord(i)
-		}
-
-		pts[i] = pointFromCoord(c)
-	}
-
-	return s2.LoopFromPoints(pts)
-}
-
-// From github.com/dgraph-io/dgraph
-func pointFromCoord(r geom.Coord) s2.Point {
-	// The geojson spec says that coordinates are specified as [long, lat]
-	// We assume that any data encoded in the database follows that format.
-	ll := s2.LatLngFromDegrees(r.Y(), r.X())
-	return s2.PointFromLatLng(ll)
 }
