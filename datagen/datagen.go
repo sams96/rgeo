@@ -1,7 +1,8 @@
 /*
 Command datagen converts geojson files into go files containing functions that
 return the geojson, it can also merge properties from one geojson file into
-another using the -merge flag.
+another using the -merge flag. You can use this if you want to use a different
+dataset to any of those included.
 
 Usage
 
@@ -24,7 +25,15 @@ import (
 	"github.com/twpayne/go-geom/encoding/geojson"
 )
 
-const tp = "datagen/datagen.tmpl"
+const tp = `// This file is generated
+
+package rgeo
+
+// {{.Varname}} {{.Comment}}
+func {{.Varname}}() []byte {
+	return []byte(` + "`" + `{{.JSON}}` + "`" + `)
+}
+`
 
 // viewData fills template tp
 type viewData struct {
@@ -86,13 +95,13 @@ func main() {
 	}
 
 	// Create template
-	tmpl, err := template.ParseFiles(tp)
+	tmpl, err := template.New("tmpl").Parse(tp)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// Write template
-	err = tmpl.ExecuteTemplate(w, "datagen.tmpl", vd)
+	err = tmpl.ExecuteTemplate(w, "tmpl", vd)
 	if err != nil {
 		log.Fatal(err)
 	}

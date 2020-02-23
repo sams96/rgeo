@@ -1,12 +1,12 @@
 # datagen
 
-This program is converts geojson files into go files containing structs that can
-be read by rgeo. You can use this if you want to use a different dataset to any
-of those included.
+Command datagen converts geojson files into go files containing functions that
+return the geojson, it can also merge properties from one geojson file into
+another using the -merge flag. You can use this if you want to use a different
+dataset to any of those included.
 
 ### Usage
 
     go run datagen.go -o outfile.go infile.geojson
 
-The variable containing the data will be named `outfile`. Currently rgeo will only
-look for at the variable called `countries110`.
+The variable containing the data will be named `outfile`.

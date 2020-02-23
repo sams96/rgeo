@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Changed
+ - Fixed datagen, and moved template back into source
+
 ## [0.0.5] - 2020-02-23
 
 ### Added
