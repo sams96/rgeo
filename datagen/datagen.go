@@ -82,7 +82,7 @@ func main() {
 		// I know this looks rediculous, but it replaces backticks (which will
 		// break the string) with `+"`"+`, which breaks the string, adds a
 		// backtick and then restarts it
-		JSON: strings.ReplaceAll(string(resp), "`", "`"+`+"`+"`"+`"+`+"`"),
+		JSON: strings.ReplaceAll(string(resp), "`", "`"+` + "`+"`"+`" + `+"`"),
 	}
 
 	// Create template
