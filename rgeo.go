@@ -82,6 +82,7 @@ func New(dataset func() []byte) (*Rgeo, error) {
 	}
 
 	ret.query = s2.NewContainsPointQuery(ret.index, s2.VertexModelOpen)
+
 	return ret, nil
 }
 
@@ -101,53 +102,29 @@ func (r *Rgeo) ReverseGeocode(loc geom.Coord) (Location, error) {
 
 // Get the relevant strings from the geojson properties
 func getLocationStrings(p map[string]interface{}) Location {
-	country, ok := p["ADMIN"].(string)
-	if !ok {
-		country, ok = p["admin"].(string)
-		if !ok {
-			country = ""
+	return Location{
+		Country:      getPropertyString(p, "ADMIN", "admin"),
+		CountryLong:  getPropertyString(p, "FORMAL_EN"),
+		CountryCode2: getPropertyString(p, "ISO_A2"),
+		CountryCode3: getPropertyString(p, "ISO_A3"),
+		Continent:    getPropertyString(p, "CONTINENT"),
+		Region:       getPropertyString(p, "REGION_UN"),
+		SubRegion:    getPropertyString(p, "SUBREGION"),
+	}
+}
+
+// getPropertyString gets the value from a map given the key as a string, or
+// from the next given key if the previous fails
+func getPropertyString(m map[string]interface{}, keys ...string) (s string) {
+	var ok bool
+	for _, k := range keys {
+		s, ok = m[k].(string)
+		if ok {
+			break
 		}
 	}
 
-	countrylong, ok := p["FORMAL_EN"].(string)
-	if !ok {
-		countrylong = ""
-	}
-
-	countrycode2, ok := p["ISO_A2"].(string)
-	if !ok {
-		countrycode2 = ""
-	}
-
-	countrycode3, ok := p["ISO_A3"].(string)
-	if !ok {
-		countrycode3 = ""
-	}
-
-	continent, ok := p["CONTINENT"].(string)
-	if !ok {
-		continent = ""
-	}
-
-	region, ok := p["REGION_UN"].(string)
-	if !ok {
-		region = ""
-	}
-
-	subregion, ok := p["SUBREGION"].(string)
-	if !ok {
-		subregion = ""
-	}
-
-	return Location{
-		Country:      country,
-		CountryLong:  countrylong,
-		CountryCode2: countrycode2,
-		CountryCode3: countrycode3,
-		Continent:    continent,
-		Region:       region,
-		SubRegion:    subregion,
-	}
+	return
 }
 
 // polygonFromGeometry converts a geom.T to an s2.Polygon

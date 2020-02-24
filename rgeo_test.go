@@ -171,7 +171,6 @@ func TestReverseGeocode_Countries(t *testing.T) {
 	}
 
 	for _, dataset := range []func() []byte{Countries110, Countries10, Provinces10} {
-
 		r, err := New(dataset)
 		if err != nil {
 			t.Error(err)

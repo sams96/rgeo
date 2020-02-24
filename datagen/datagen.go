@@ -88,7 +88,7 @@ func main() {
 		Varname: strings.TrimSuffix(*outFileName, ".go"),
 		Comment: "uses data from " + printSlice(prefixSlice(pre, files)),
 
-		// I know this looks rediculous, but it replaces backticks (which will
+		// I know this looks ridiculous, but it replaces backticks (which will
 		// break the string) with `+"`"+`, which breaks the string, adds a
 		// backtick and then restarts it
 		JSON: strings.ReplaceAll(string(resp), "`", "`"+` + "`+"`"+`" + `+"`"),
@@ -113,11 +113,13 @@ func readInputs(in []string, mergeFileName string) (*geojson.FeatureCollection, 
 	fc := new(geojson.FeatureCollection)
 
 	var mergeData *geojson.FeatureCollection
+
 	if mergeFileName != "" {
 		md, err := readInput(mergeFileName, nil)
 		if err != nil {
 			return nil, err
 		}
+
 		mergeData = md
 	}
 
