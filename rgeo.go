@@ -41,13 +41,18 @@ type Location struct {
 	// Formal name of country
 	CountryLong string `json:"country_long,omitempty"`
 
-	// Two and three letter ISO 3166 codes
+	// ISO 3166-1 alpha-1 and alpha-2 codes
 	CountryCode2 string `json:"country_code_2,omitempty"`
 	CountryCode3 string `json:"country_code_3,omitempty"`
 
 	Continent string `json:"continent,omitempty"`
 	Region    string `json:"region,omitempty"`
 	SubRegion string `json:"subregion,omitempty"`
+
+	Province string `json:"province,omitempty"`
+
+	// ISO 3166-2 code
+	ProvinceCode string `json:"province_code,omitempty"`
 }
 
 // Rgeo is the type used to hold pre-created polygons for reverse geocoding
@@ -110,6 +115,8 @@ func getLocationStrings(p map[string]interface{}) Location {
 		Continent:    getPropertyString(p, "CONTINENT"),
 		Region:       getPropertyString(p, "REGION_UN"),
 		SubRegion:    getPropertyString(p, "SUBREGION"),
+		Province:     getPropertyString(p, "name"),
+		ProvinceCode: getPropertyString(p, "iso_3166_2"),
 	}
 }
 
