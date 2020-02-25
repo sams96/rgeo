@@ -307,6 +307,17 @@ func TestString(t *testing.T) {
 			},
 			expected: "<Location> Northern America",
 		},
+		{
+			name: "London",
+			in: Location{
+				Country:      "United Kingdom",
+				CountryLong:  "United Kingdom of Great Britain and Northern Ireland",
+				CountryCode3: "GBR",
+				Continent:    "Europe",
+				City:         "London",
+			},
+			expected: "<Location> London, United Kingdom (GBR), Europe",
+		},
 	}
 
 	for _, test := range tests {
@@ -346,6 +357,21 @@ func ExampleRgeo_ReverseGeocode() {
 	// Europe
 	// Europe
 	// Northern Europe
+}
+
+func ExampleRgeo_ReverseGeocode_City() {
+	r, err := New(Provinces10, Cities10)
+	if err != nil {
+		// Handle error
+	}
+
+	loc, err := r.ReverseGeocode([]float64{141.35, 43.07})
+	if err != nil {
+		// Handle error
+	}
+
+	fmt.Println(loc)
+	// Output: <Location> Sapporo, Hokkaido, Japan (JPN), Asia
 }
 
 func BenchmarkReverseGeocode_110(b *testing.B) {

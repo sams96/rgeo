@@ -21,6 +21,19 @@ the data beforehand (links to which are in the files).
 
 ## Usage
 
+Initialise rgeo using rgeo.New, which takes any number of datasets. The included
+datasets are:
+ - `Countries110` - Just country information, smallest and lowest detail of the
+   included datasets.
+ - `Countries10` - The same as above but with more detail.
+ - `Provinces10` - Includes province information as well as country, so can
+   still be used alone.
+ - `Cities10` - Just city information, if you want provinces and/or countries as
+   well use one of the above datasets with it.
+Once initialised you can use `ReverseGeocode` on the value returned by `New`,
+with your coordinates to get the location information. See the [Go
+Docs](https://pkg.go.dev/github.com/sams96/rgeo) for more information on usage.
+
 ```go
 r, err := rgeo.New(Countries110)
 if err != nil {
@@ -49,6 +62,20 @@ fmt.Printf("%s\n", loc.SubRegion)
 // Northern Europe
 ```
 
+```go
+r, err := New(Provinces10, Cities10)
+if err != nil {
+	// Handle error
+}
+
+loc, err := r.ReverseGeocode([]float64{141.35, 43.07})
+if err != nil {
+	// Handle error
+}
+
+fmt.Println(loc)
+// Output: <Location> Sapporo, Hokkaido, Japan (JPN), Asia
+```
 ## Contributing
 
 Contributions are welcome, I haven't got any guidelines or anything so maybe

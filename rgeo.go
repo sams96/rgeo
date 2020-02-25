@@ -333,6 +333,16 @@ func (l Location) String() string {
 	// TODO: Add special case for empty Location
 	ret := "<Location>"
 
+	// Add city name
+	if l.City != "" {
+		ret += " " + l.City + ","
+	}
+
+	// Add province name
+	if l.Province != "" {
+		ret += " " + l.Province + ","
+	}
+
 	// Add country name
 	if l.Country != "" {
 		ret += " " + l.Country

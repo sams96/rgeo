@@ -7,23 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Added
+ - Province information to `Location`.
+ - New dataset `Cities10` and added `City` field to `Location`.
+
 ### Changed
- - Fixed datagen, and moved template back into source
- - Added new dataset `Cities10` and added `City` field to `Location`
+ - Fixed datagen, and moved template back into code.
+ - `New` can now accept multiple datasets (which is only really useful when you
+   want to use `Cities10` and get province/country information.
+ - Switched to Apache License.
 
 ## [0.0.5] - 2020-02-23
 
 ### Added
  - JSON strings in `Location` for more idiomatic marshalling .
  - datagen can now read multiple inputs to one output.
- - 1:10m scale datasets for countries and provinces
+ - 1:10m scale datasets for countries and provinces.
  - Datasets are returned from functions so the compiler doesn't include unused
-   ones in builds
- - Brought back the `New` function to initialise the data
+   ones in builds.
+ - Brought back the `New` function to initialise the data.
 
 ### Changes
- - Massive speed increase on queries
- - Data initialisation is probably slower
+ - Massive speed increase on queries.
+ - Data initialisation is probably slower.
 
 ## [0.0.4] - 2020-02-20
 
