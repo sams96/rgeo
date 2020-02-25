@@ -172,7 +172,7 @@ func readInput(f string, mergeData *geojson.FeatureCollection) (*geojson.Feature
 	for _, feat := range fc.Features {
 		country, ok := feat.Properties["admin"].(string)
 		if !ok {
-			log.Println("Country name in wrong place")
+			log.Println("country name in wrong place")
 			break
 		}
 

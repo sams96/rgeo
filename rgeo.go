@@ -38,6 +38,7 @@ package rgeo
 
 import (
 	"encoding/json"
+	"strings"
 
 	"github.com/golang/geo/s2"
 	"github.com/pkg/errors"
@@ -68,6 +69,8 @@ type Location struct {
 
 	// ISO 3166-2 code
 	ProvinceCode string `json:"province_code,omitempty"`
+
+	City string `json:"city,omitempty"`
 }
 
 // Rgeo is the type used to hold pre-created polygons for reverse geocoding
@@ -77,14 +80,22 @@ type Rgeo struct {
 	query *s2.ContainsPointQuery
 }
 
-// New returns an Rgeo struct which can then be used with ReverseGeocode. Only
-// input is the dataset, which is either Countries10, Countries110 or
-// Provinces10. Check datagen/ for info on using your own dataset
-func New(dataset func() []byte) (*Rgeo, error) {
+// New returns an Rgeo struct which can then be used with ReverseGeocode. Takes
+// any number of datasets as an argument. The included datasets are:
+// Countries110, Countries10, Provinces10 and Cities10. Provinces10 includes all
+// of the country information so if that's all you want don't use Countries as
+// well. Cities10 only includes cities so you'll probably want to use
+// Provinces10 with it.
+func New(datasets ...func() []byte) (*Rgeo, error) {
 	// Parse geojson
 	var fc geojson.FeatureCollection
-	if err := json.Unmarshal(dataset(), &fc); err != nil {
-		return nil, err
+	for _, dataset := range datasets {
+		var tfc geojson.FeatureCollection
+		if err := json.Unmarshal(dataset(), &tfc); err != nil {
+			return nil, err
+		}
+
+		fc.Features = append(fc.Features, tfc.Features...)
 	}
 
 	ret := new(Rgeo)
@@ -117,7 +128,37 @@ func (r *Rgeo) ReverseGeocode(loc geom.Coord) (Location, error) {
 		return Location{}, ErrLocationNotFound
 	}
 
-	return r.locs[res[0]], nil
+	return r.combineLocations(res), nil
+}
+
+// combineLocations combines the Locations for the given s2 Shapes
+func (r *Rgeo) combineLocations(s []s2.Shape) (l Location) {
+	for _, shape := range s {
+		loc := r.locs[shape]
+		l.Country = firstNonEmpty(l.Country, loc.Country)
+		l.CountryLong = firstNonEmpty(l.CountryLong, loc.CountryLong)
+		l.CountryCode2 = firstNonEmpty(l.CountryCode2, loc.CountryCode2)
+		l.CountryCode3 = firstNonEmpty(l.CountryCode3, loc.CountryCode3)
+		l.Continent = firstNonEmpty(l.Continent, loc.Continent)
+		l.Region = firstNonEmpty(l.Region, loc.Region)
+		l.SubRegion = firstNonEmpty(l.SubRegion, loc.SubRegion)
+		l.Province = firstNonEmpty(l.Province, loc.Province)
+		l.ProvinceCode = firstNonEmpty(l.ProvinceCode, loc.ProvinceCode)
+		l.City = firstNonEmpty(l.City, loc.City)
+	}
+
+	return
+}
+
+// firstNonEmpty returns the first non empty parameter
+func firstNonEmpty(s ...string) string {
+	for _, i := range s {
+		if i != "" {
+			return i
+		}
+	}
+
+	return ""
 }
 
 // Get the relevant strings from the geojson properties
@@ -132,6 +173,7 @@ func getLocationStrings(p map[string]interface{}) Location {
 		SubRegion:    getPropertyString(p, "SUBREGION"),
 		Province:     getPropertyString(p, "name"),
 		ProvinceCode: getPropertyString(p, "iso_3166_2"),
+		City:         strings.TrimSuffix(getPropertyString(p, "name_conve"), "2"),
 	}
 }
 

@@ -21,12 +21,11 @@ import (
 	"testing"
 
 	"github.com/go-test/deep"
-	geom "github.com/twpayne/go-geom"
 )
 
 var testdata = []struct {
 	name     string
-	in       geom.Coord
+	in       []float64
 	err      error
 	expected Location
 }{
@@ -48,7 +47,7 @@ var testdata = []struct {
 	},
 	{
 		name: "Madagascar",
-		in:   []float64{47.478275, -17.530126},
+		in:   []float64{47.523836, -18.905691},
 		err:  nil,
 		expected: Location{
 			Country:      "Madagascar",
@@ -58,8 +57,9 @@ var testdata = []struct {
 			Continent:    "Africa",
 			Region:       "Africa",
 			SubRegion:    "Eastern Africa",
-			Province:     "Betsiboka",
-			ProvinceCode: "MG-M",
+			Province:     "Analamanga",
+			ProvinceCode: "MG-T",
+			City:         "Antananarivo",
 		},
 	},
 	{
@@ -108,7 +108,7 @@ var testdata = []struct {
 	},
 	{
 		name: "Alaska",
-		in:   []float64{-150.542, 66.3},
+		in:   []float64{-149.901785, 61.199134},
 		err:  nil,
 		expected: Location{
 			Country:      "United States of America",
@@ -120,11 +120,12 @@ var testdata = []struct {
 			SubRegion:    "Northern America",
 			Province:     "Alaska",
 			ProvinceCode: "US-AK",
+			City:         "Anchorage",
 		},
 	},
 	{
 		name: "UK",
-		in:   []float64{0, 52},
+		in:   []float64{0, 51.5045},
 		err:  nil,
 		expected: Location{
 			Country:      "United Kingdom",
@@ -134,8 +135,9 @@ var testdata = []struct {
 			Continent:    "Europe",
 			Region:       "Europe",
 			SubRegion:    "Northern Europe",
-			Province:     "Hertfordshire",
-			ProvinceCode: "GB-HRT",
+			Province:     "Tower Hamlets",
+			ProvinceCode: "GB-TWH",
+			City:         "London",
 		},
 	},
 	{
@@ -216,6 +218,7 @@ func TestReverseGeocode_Countries(t *testing.T) {
 
 			test.expected.Province = ""
 			test.expected.ProvinceCode = ""
+			test.expected.City = ""
 
 			t.Run(test.name, func(t *testing.T) {
 				result, err := r.ReverseGeocode(test.in)
@@ -231,24 +234,45 @@ func TestReverseGeocode_Countries(t *testing.T) {
 }
 
 func TestReverseGeocode_Provinces(t *testing.T) {
-	for _, dataset := range []func() []byte{Provinces10} {
-		r, err := New(dataset)
-		if err != nil {
-			t.Error(err)
-		}
+	r, err := New(Provinces10)
+	if err != nil {
+		t.Error(err)
+	}
 
-		for _, test := range testdata {
-			test := test
-			t.Run(test.name, func(t *testing.T) {
-				result, err := r.ReverseGeocode(test.in)
-				if err != test.err {
-					t.Errorf("expected error: %s\n got: %s\n", test.err, err)
-				}
-				if diff := deep.Equal(test.expected, result); diff != nil {
-					t.Error(diff)
-				}
-			})
-		}
+	for _, test := range testdata {
+		test := test
+
+		test.expected.City = ""
+
+		t.Run(test.name, func(t *testing.T) {
+			result, err := r.ReverseGeocode(test.in)
+			if err != test.err {
+				t.Errorf("expected error: %s\n got: %s\n", test.err, err)
+			}
+			if diff := deep.Equal(test.expected, result); diff != nil {
+				t.Error(diff)
+			}
+		})
+	}
+}
+
+func TestReverseGeocode_Cities(t *testing.T) {
+	r, err := New(Provinces10, Cities10)
+	if err != nil {
+		t.Error(err)
+	}
+
+	for _, test := range testdata {
+		test := test
+		t.Run(test.name, func(t *testing.T) {
+			result, err := r.ReverseGeocode(test.in)
+			if err != test.err {
+				t.Errorf("expected error: %s\n got: %s\n", test.err, err)
+			}
+			if diff := deep.Equal(test.expected, result); diff != nil {
+				t.Error(diff)
+			}
+		})
 	}
 }
 
@@ -358,6 +382,22 @@ func BenchmarkReverseGeocode_10(b *testing.B) {
 
 func BenchmarkReverseGeocode_Prov10(b *testing.B) {
 	r, err := New(Provinces10)
+	if err != nil {
+		b.Error(err)
+	}
+
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		_, _ = r.ReverseGeocode([]float64{
+			(rand.Float64() * 360) - 180,
+			(rand.Float64() * 180) - 90,
+		})
+	}
+}
+
+func BenchmarkReverseGeocode_City10(b *testing.B) {
+	r, err := New(Provinces10, Cities10)
 	if err != nil {
 		b.Error(err)
 	}

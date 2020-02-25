@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
  - Fixed datagen, and moved template back into source
+ - Added new dataset `Cities10` and added `City` field to `Location`
 
 ## [0.0.5] - 2020-02-23
 
