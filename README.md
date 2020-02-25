@@ -53,3 +53,7 @@ fmt.Printf("%s\n", loc.SubRegion)
 
 Contributions are welcome, I haven't got any guidelines or anything so maybe
 just make an issue first.
+
+## Projects using rgeo
+
+ - [rgeoSrv](https://github.com/sams96/rgeoSrv) - rgeo as a microservice
