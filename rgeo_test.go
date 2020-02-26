@@ -276,6 +276,40 @@ func TestReverseGeocode_Cities(t *testing.T) {
 	}
 }
 
+func TestNew_BadData(t *testing.T) {
+	testdata := []struct {
+		name string
+		in   func() []byte
+		err  string
+	}{
+		{
+			name: "Empty data",
+			in:   func() []byte { return []byte(``) },
+			err:  "invalid dataset: unexpected end of JSON input",
+		},
+		{
+			name: "Wrong type",
+			in: func() []byte {
+				return []byte(
+					`{"type":"FeatureCollection","features":
+						[{"type":"Feature","geometry":
+							{"type":"Point","coordinates":[0,0]}}]}`,
+				)
+			},
+			err: "invalid dataset: needs Polygon or MultiPolygon",
+		},
+	}
+	for _, test := range testdata {
+		test := test
+		t.Run(test.name, func(t *testing.T) {
+			_, err := New(test.in)
+			if err.Error() != test.err {
+				t.Errorf("expected error: %s\n got: %s\n", test.err, err)
+			}
+		})
+	}
+}
+
 func TestString(t *testing.T) {
 	tests := []struct {
 		name     string

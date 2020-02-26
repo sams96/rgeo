@@ -92,7 +92,7 @@ func New(datasets ...func() []byte) (*Rgeo, error) {
 	for _, dataset := range datasets {
 		var tfc geojson.FeatureCollection
 		if err := json.Unmarshal(dataset(), &tfc); err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "invalid dataset")
 		}
 
 		fc.Features = append(fc.Features, tfc.Features...)
@@ -105,7 +105,7 @@ func New(datasets ...func() []byte) (*Rgeo, error) {
 	for _, c := range fc.Features {
 		p, err := polygonFromGeometry(c.Geometry)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "invalid dataset")
 		}
 
 		ret.index.Add(p)
@@ -204,7 +204,7 @@ func polygonFromGeometry(g geom.T) (*s2.Polygon, error) {
 	case *geom.MultiPolygon:
 		polygon, err = polygonFromMultiPolygon(t)
 	default:
-		return nil, errors.Errorf("needs geom.Polygon or geom.MultiPolygon")
+		return nil, errors.Errorf("needs Polygon or MultiPolygon")
 	}
 
 	if err != nil {
