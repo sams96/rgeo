@@ -390,6 +390,11 @@ func TestString(t *testing.T) {
 			},
 			expected: "<Location> London, United Kingdom (GBR), Europe",
 		},
+		{
+			name:     "Empty",
+			in:       Location{},
+			expected: "<Location> Empty Location",
+		},
 	}
 
 	for _, test := range tests {
@@ -431,7 +436,7 @@ func ExampleRgeo_ReverseGeocode() {
 	// Northern Europe
 }
 
-func ExampleRgeo_ReverseGeocode_City() {
+func ExampleRgeo_ReverseGeocode_city() {
 	r, err := New(Provinces10, Cities10)
 	if err != nil {
 		// Handle error

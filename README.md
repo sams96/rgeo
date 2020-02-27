@@ -14,7 +14,10 @@ then this is the library for you.
 
 rgeo uses data from [naturalearthdata.com](https://naturalearthdata.com), if
 your coordinates are going to be near specific borders I would advise checking
-the data beforehand (links to which are in the files).
+the data beforehand (links to which are in the files). If you want to use your
+own dataset, check out the [datagen
+folder](https://github.com/sams96/rgeo/tree/master/datagen).
+
 
 ## Installation
 

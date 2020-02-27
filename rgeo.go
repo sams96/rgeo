@@ -17,13 +17,13 @@ specific language governing permissions and limitations under the License.
 Package rgeo is a fast, simple solution for local reverse geocoding.
 
 Rather than relying on external software or online APIs, rgeo packages all of
-the data it needs in your binary. This means it will only ever work down to the
-level of cities (though currently just countries), but if that's all you need
-then this is the library for you.
+the data it needs in your binary. This means it will only works down to the
+level of cities, but if that's all you need then this is the library for you.
 
 rgeo uses data from https://naturalearthdata.com, if your coordinates are going
 to be near specific borders I would advise checking the data beforehand (links
-to which are in the files).
+to which are in the files). If you want to use your own dataset, check out the
+datagen folder.
 
 Installation
 
@@ -80,6 +80,14 @@ type Rgeo struct {
 	query *s2.ContainsPointQuery
 }
 
+// Go generate commands to regenerate the included datasets, this assumes you
+// have the GeoJSON files from
+// https://github.com/nvkelso/natural-earth-vector/tree/master/geojson
+//go:generate go run datagen/datagen.go -ne -o Countries110.go ne_110m_admin_0_countries.geojson
+//go:generate go run datagen/datagen.go -ne -o Countries10.go ne_10m_admin_0_countries.geojson
+//go:generate go run datagen/datagen.go -ne -o Provinces10.go -merge ne_10m_admin_0_countries.geojson ne_10m_admin_1_states_provinces.geojson
+//go:generate go run datagen/datagen.go -ne -o Cities10.go ne_10m_urban_areas_landscan.geojson
+
 // New returns an Rgeo struct which can then be used with ReverseGeocode. Takes
 // any number of datasets as an argument. The included datasets are:
 // Countries110, Countries10, Provinces10 and Cities10. Provinces10 includes all
@@ -87,8 +95,9 @@ type Rgeo struct {
 // well. Cities10 only includes cities so you'll probably want to use
 // Provinces10 with it.
 func New(datasets ...func() []byte) (*Rgeo, error) {
-	// Parse geojson
+	// Parse GeoJSON
 	var fc geojson.FeatureCollection
+
 	for _, dataset := range datasets {
 		var tfc geojson.FeatureCollection
 		if err := json.Unmarshal(dataset(), &tfc); err != nil {
@@ -98,10 +107,12 @@ func New(datasets ...func() []byte) (*Rgeo, error) {
 		fc.Features = append(fc.Features, tfc.Features...)
 	}
 
+	// Initialise Rgeo struct
 	ret := new(Rgeo)
 	ret.index = s2.NewShapeIndex()
 	ret.locs = make(map[s2.Shape]Location)
 
+	// Convert GeoJSON features from geom (multi)polygons to s2 polygons
 	for _, c := range fc.Features {
 		p, err := polygonFromGeometry(c.Geometry)
 		if err != nil {
@@ -109,6 +120,10 @@ func New(datasets ...func() []byte) (*Rgeo, error) {
 		}
 
 		ret.index.Add(p)
+
+		// The s2 ContainsPointQuery returns the shapes that contain the given
+		// point, but I haven't found any way to attach the location information
+		// to the shapes, so I use a map to get the information.
 		ret.locs[p] = getLocationStrings(c.Properties)
 	}
 
@@ -135,16 +150,18 @@ func (r *Rgeo) ReverseGeocode(loc geom.Coord) (Location, error) {
 func (r *Rgeo) combineLocations(s []s2.Shape) (l Location) {
 	for _, shape := range s {
 		loc := r.locs[shape]
-		l.Country = firstNonEmpty(l.Country, loc.Country)
-		l.CountryLong = firstNonEmpty(l.CountryLong, loc.CountryLong)
-		l.CountryCode2 = firstNonEmpty(l.CountryCode2, loc.CountryCode2)
-		l.CountryCode3 = firstNonEmpty(l.CountryCode3, loc.CountryCode3)
-		l.Continent = firstNonEmpty(l.Continent, loc.Continent)
-		l.Region = firstNonEmpty(l.Region, loc.Region)
-		l.SubRegion = firstNonEmpty(l.SubRegion, loc.SubRegion)
-		l.Province = firstNonEmpty(l.Province, loc.Province)
-		l.ProvinceCode = firstNonEmpty(l.ProvinceCode, loc.ProvinceCode)
-		l.City = firstNonEmpty(l.City, loc.City)
+		l = Location{
+			Country:      firstNonEmpty(l.Country, loc.Country),
+			CountryLong:  firstNonEmpty(l.CountryLong, loc.CountryLong),
+			CountryCode2: firstNonEmpty(l.CountryCode2, loc.CountryCode2),
+			CountryCode3: firstNonEmpty(l.CountryCode3, loc.CountryCode3),
+			Continent:    firstNonEmpty(l.Continent, loc.Continent),
+			Region:       firstNonEmpty(l.Region, loc.Region),
+			SubRegion:    firstNonEmpty(l.SubRegion, loc.SubRegion),
+			Province:     firstNonEmpty(l.Province, loc.Province),
+			ProvinceCode: firstNonEmpty(l.ProvinceCode, loc.ProvinceCode),
+			City:         firstNonEmpty(l.City, loc.City),
+		}
 	}
 
 	return
@@ -161,7 +178,7 @@ func firstNonEmpty(s ...string) string {
 	return ""
 }
 
-// Get the relevant strings from the geojson properties
+// Get the relevant strings from the GeoJSON properties
 func getLocationStrings(p map[string]interface{}) Location {
 	return Location{
 		Country:      getPropertyString(p, "ADMIN", "admin"),
@@ -257,7 +274,7 @@ func loopSliceFromPolygon(p *geom.Polygon) ([]*s2.Loop, error) {
 
 		// S2 specifies that the orientation of the polygons should be CCW.
 		// However there is no restriction on the orientation in WKB (or
-		// geojson). To get the correct orientation we assume that the polygons
+		// GeoJSON). To get the correct orientation we assume that the polygons
 		// are always less than one hemisphere. If they are bigger, we flip the
 		// orientation.
 		reverse := isClockwise(r)
@@ -322,7 +339,7 @@ func loopFromRing(r *geom.LinearRing, reverse bool) *s2.Loop {
 
 // From github.com/dgraph-io/dgraph
 func pointFromCoord(r geom.Coord) s2.Point {
-	// The geojson spec says that coordinates are specified as [long, lat]
+	// The GeoJSON spec says that coordinates are specified as [long, lat]
 	// We assume that any data encoded in the database follows that format.
 	ll := s2.LatLngFromDegrees(r.Y(), r.X())
 	return s2.PointFromLatLng(ll)
@@ -330,8 +347,12 @@ func pointFromCoord(r geom.Coord) s2.Point {
 
 // String method for type Location
 func (l Location) String() string {
-	// TODO: Add special case for empty Location
 	ret := "<Location>"
+
+	// Special case for empty location
+	if l == (Location{}) {
+		return ret + " Empty Location"
+	}
 
 	// Add city name
 	if l.City != "" {
