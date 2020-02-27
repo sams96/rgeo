@@ -514,3 +514,9 @@ func BenchmarkReverseGeocode_City10(b *testing.B) {
 		})
 	}
 }
+
+func BenchmarkNew(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		New(Countries110)
+	}
+}
