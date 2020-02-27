@@ -247,12 +247,12 @@ func loopSliceFromPolygon(p *geom.Polygon) ([]*s2.Loop, error) {
 		n := r.NumCoords()
 
 		if n < 4 {
-			return nil, errors.Errorf("Can't convert ring with less than 4 pts")
+			return nil, errors.Errorf("can't convert ring with less than 4 points")
 		}
 
 		if !r.Coord(0).Equal(geom.XY, r.Coord(n-1)) {
 			return nil, errors.Errorf(
-				"Last coordinate not same as first for polygon: %+v\n", p)
+				"last coordinate not same as first for polygon: %+v", p.FlatCoords())
 		}
 
 		// S2 specifies that the orientation of the polygons should be CCW.

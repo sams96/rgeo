@@ -298,12 +298,50 @@ func TestNew_BadData(t *testing.T) {
 			},
 			err: "invalid dataset: needs Polygon or MultiPolygon",
 		},
+		{
+			name: "Small polygon",
+			in: func() []byte {
+				return []byte(
+					`{"type":"FeatureCollection","features":
+						[{"type":"Feature","geometry":
+							{"type":"Polygon",
+							"coordinates":[[[1,2],[3,4],[1,2]]]}}]}`,
+				)
+			},
+			err: "invalid dataset: can't convert ring with less than 4 points",
+		},
+		{
+			name: "No repeated end",
+			in: func() []byte {
+				return []byte(
+					`{"type":"FeatureCollection","features":
+						[{"type":"Feature","geometry":
+							{"type":"Polygon",
+							"coordinates":[[[1,2],[3,4],[5,6],[7,8]]]}}]}`,
+				)
+			},
+			err: "invalid dataset: last coordinate not same as first for " +
+				"polygon: [1 2 3 4 5 6 7 8]",
+		},
+		{
+			name: "Bad Multipolygon",
+			in: func() []byte {
+				return []byte(
+					`{"type":"FeatureCollection","features":
+						[{"type":"Feature","geometry":
+							{"type":"MultiPolygon",
+							"coordinates":[[[[1,2],[3,4],[5,6],[7,8]]]]}}]}`,
+				)
+			},
+			err: "invalid dataset: last coordinate not same as first for " +
+				"polygon: [1 2 3 4 5 6 7 8]",
+		},
 	}
 	for _, test := range testdata {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
 			_, err := New(test.in)
-			if err.Error() != test.err {
+			if err != nil && err.Error() != test.err {
 				t.Errorf("expected error: %s\n got: %s\n", test.err, err)
 			}
 		})
