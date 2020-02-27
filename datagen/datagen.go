@@ -21,6 +21,7 @@ can use this if you want to use a different dataset to any of those included,
 although that might be somewhat awkward if the properties in your GeoJSON file
 are different.
 
+
 Usage
 
 	go run datagen.go -o outfile.go infile.geojson

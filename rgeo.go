@@ -25,6 +25,7 @@ to be near specific borders I would advise checking the data beforehand (links
 to which are in the files). If you want to use your own dataset, check out the
 datagen folder.
 
+
 Installation
 
 	go get github.com/sams96/rgeo
