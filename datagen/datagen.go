@@ -28,6 +28,7 @@ Usage
 The variable containing the data will be named outfile.
 
 rgeo reads the location information from the following GeoJSON properties:
+
 	- Country:      "ADMIN" or "admin"
 	- CountryLong:  "FORMAL_EN"
 	- CountryCode2: "ISO_A2"
@@ -60,7 +61,7 @@ package rgeo
 
 // {{.Varname}} {{.Comment}}
 func {{.Varname}}() []byte {
-	//lint:ignore
+	// nolint
 	return []byte(` + "`" + `{{.JSON}}` + "`" + `)
 }
 `
