@@ -107,22 +107,28 @@ func New(datasets ...func() []byte) (*Rgeo, error) {
 
 		// Decode dataset
 		dec := make([]byte, len(dat))
+
 		_, err := base64.StdEncoding.Decode(dec, dat)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "invalid dataset: base64")
 		}
 
 		var b bytes.Buffer
 		b.Write(dec)
+
 		zr, err := gzip.NewReader(&b)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "invalid dataset: gzip")
 		}
 
 		// Parse GeoJSON
 		var tfc geojson.FeatureCollection
 		if err := json.NewDecoder(zr).Decode(&tfc); err != nil {
 			return nil, errors.Wrap(err, "invalid dataset")
+		}
+
+		if err := zr.Close(); err != nil {
+			return nil, errors.Wrap(err, "failed to close gzip reader")
 		}
 
 		fc.Features = append(fc.Features, tfc.Features...)

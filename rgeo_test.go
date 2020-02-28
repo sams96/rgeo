@@ -16,6 +16,9 @@ specific language governing permissions and limitations under the License.
 package rgeo
 
 import (
+	"bytes"
+	"compress/gzip"
+	"encoding/base64"
 	"fmt"
 	"math/rand"
 	"testing"
@@ -276,7 +279,6 @@ func TestReverseGeocode_Cities(t *testing.T) {
 	}
 }
 
-/* TODO: Compress data to match datafiles
 func TestNew_BadData(t *testing.T) {
 	testdata := []struct {
 		name string
@@ -286,15 +288,15 @@ func TestNew_BadData(t *testing.T) {
 		{
 			name: "Empty data",
 			in:   func() []byte { return []byte(``) },
-			err:  "invalid dataset: unexpected end of JSON input",
+			err:  "invalid dataset: gzip: EOF",
 		},
 		{
 			name: "Wrong type",
 			in: func() []byte {
-				return []byte(
+				return compressData(t,
 					`{"type":"FeatureCollection","features":
-						[{"type":"Feature","geometry":
-							{"type":"Point","coordinates":[0,0]}}]}`,
+							[{"type":"Feature","geometry":
+								{"type":"Point","coordinates":[0,0]}}]}`,
 				)
 			},
 			err: "invalid dataset: needs Polygon or MultiPolygon",
@@ -302,11 +304,11 @@ func TestNew_BadData(t *testing.T) {
 		{
 			name: "Small polygon",
 			in: func() []byte {
-				return []byte(
+				return compressData(t,
 					`{"type":"FeatureCollection","features":
-						[{"type":"Feature","geometry":
-							{"type":"Polygon",
-							"coordinates":[[[1,2],[3,4],[1,2]]]}}]}`,
+							[{"type":"Feature","geometry":
+								{"type":"Polygon",
+								"coordinates":[[[1,2],[3,4],[1,2]]]}}]}`,
 				)
 			},
 			err: "invalid dataset: can't convert ring with less than 4 points",
@@ -314,11 +316,11 @@ func TestNew_BadData(t *testing.T) {
 		{
 			name: "No repeated end",
 			in: func() []byte {
-				return []byte(
+				return compressData(t,
 					`{"type":"FeatureCollection","features":
-						[{"type":"Feature","geometry":
-							{"type":"Polygon",
-							"coordinates":[[[1,2],[3,4],[5,6],[7,8]]]}}]}`,
+							[{"type":"Feature","geometry":
+								{"type":"Polygon",
+								"coordinates":[[[1,2],[3,4],[5,6],[7,8]]]}}]}`,
 				)
 			},
 			err: "invalid dataset: last coordinate not same as first for " +
@@ -327,11 +329,11 @@ func TestNew_BadData(t *testing.T) {
 		{
 			name: "Bad Multipolygon",
 			in: func() []byte {
-				return []byte(
+				return compressData(t,
 					`{"type":"FeatureCollection","features":
-						[{"type":"Feature","geometry":
-							{"type":"MultiPolygon",
-							"coordinates":[[[[1,2],[3,4],[5,6],[7,8]]]]}}]}`,
+							[{"type":"Feature","geometry":
+								{"type":"MultiPolygon",
+								"coordinates":[[[[1,2],[3,4],[5,6],[7,8]]]]}}]}`,
 				)
 			},
 			err: "invalid dataset: last coordinate not same as first for " +
@@ -348,7 +350,6 @@ func TestNew_BadData(t *testing.T) {
 		})
 	}
 }
-*/
 
 func TestString(t *testing.T) {
 	tests := []struct {
@@ -519,6 +520,27 @@ func BenchmarkReverseGeocode_City10(b *testing.B) {
 
 func BenchmarkNew(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		New(Countries110)
+		_, err := New(Countries110)
+		if err != nil {
+			b.Error(err)
+		}
 	}
+}
+
+func compressData(t *testing.T, in string) []byte {
+	var buf bytes.Buffer
+	zw := gzip.NewWriter(&buf)
+
+	if _, err := zw.Write([]byte(in)); err != nil {
+		t.Error(err)
+	}
+
+	if err := zw.Close(); err != nil {
+		t.Error(err)
+	}
+
+	b := make([]byte, base64.StdEncoding.EncodedLen(buf.Len()))
+	base64.StdEncoding.Encode(b, buf.Bytes())
+
+	return b
 }
