@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [1.1.0] - 2020-02-28
+
 ### Changed
  - GeoJSON data is now compressed with gzip in go files, leading to much smaller
    file sizes without a noticeable performance hit when reading.
