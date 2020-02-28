@@ -38,6 +38,9 @@ just make an issue first.
 package rgeo
 
 import (
+	"bytes"
+	"compress/gzip"
+	"encoding/base64"
 	"encoding/json"
 	"strings"
 
@@ -100,8 +103,25 @@ func New(datasets ...func() []byte) (*Rgeo, error) {
 	var fc geojson.FeatureCollection
 
 	for _, dataset := range datasets {
+		dat := dataset()
+
+		// Decode dataset
+		dec := make([]byte, len(dat))
+		_, err := base64.StdEncoding.Decode(dec, dat)
+		if err != nil {
+			return nil, err
+		}
+
+		var b bytes.Buffer
+		b.Write(dec)
+		zr, err := gzip.NewReader(&b)
+		if err != nil {
+			return nil, err
+		}
+
+		// Parse GeoJSON
 		var tfc geojson.FeatureCollection
-		if err := json.Unmarshal(dataset(), &tfc); err != nil {
+		if err := json.NewDecoder(zr).Decode(&tfc); err != nil {
 			return nil, errors.Wrap(err, "invalid dataset")
 		}
 

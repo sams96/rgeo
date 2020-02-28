@@ -15,11 +15,11 @@ specific language governing permissions and limitations under the License.
 
 /*
 Command datagen converts GeoJSON files into go files containing functions that
-return the GeoJSON, it can also merge properties from one GeoJSON file into
-another using the -merge flag (which it does by matching the country names). You
-can use this if you want to use a different dataset to any of those included,
-although that might be somewhat awkward if the properties in your GeoJSON file
-are different.
+return the compressed GeoJSON, it can also merge properties from one GeoJSON
+file into another using the -merge flag (which it does by matching the country
+names). You can use this if you want to use a different dataset to any of those
+included, although that might be somewhat awkward if the properties in your
+GeoJSON file are different.
 
 
 Usage
@@ -45,6 +45,9 @@ package main
 
 import (
 	"bufio"
+	"bytes"
+	"compress/gzip"
+	"encoding/base64"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -116,14 +119,22 @@ func main() {
 		log.Fatal(err)
 	}
 
+	// Compress data
+	var buf bytes.Buffer
+	zw := gzip.NewWriter(&buf)
+
+	if _, err := zw.Write(resp); err != nil {
+		log.Fatal(err)
+	}
+
+	if err := zw.Close(); err != nil {
+		log.Fatal(err)
+	}
+
 	vd := viewData{
 		Varname: strings.TrimSuffix(*outFileName, ".go"),
 		Comment: "uses data from " + printSlice(prefixSlice(pre, files)),
-
-		// I know this looks ridiculous, but it replaces backticks (which will
-		// break the string) with `+"`"+`, which breaks the string, adds a
-		// backtick and then restarts it
-		JSON: strings.ReplaceAll(string(resp), "`", "`"+` + "`+"`"+`" + `+"`"),
+		JSON:    base64.StdEncoding.EncodeToString(buf.Bytes()),
 	}
 
 	// Create template
