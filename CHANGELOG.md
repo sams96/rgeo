@@ -5,9 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
-
 ## [1.1.0] - 2020-02-28
+
+Mostly just bumping the version to see if pkg.go.dev will update now the
+data files are much smaller.
 
 ### Changed
  - GeoJSON data is now compressed with gzip in go files, leading to much smaller

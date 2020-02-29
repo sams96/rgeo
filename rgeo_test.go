@@ -288,7 +288,7 @@ func TestNew_BadData(t *testing.T) {
 		{
 			name: "Empty data",
 			in:   func() []byte { return []byte(``) },
-			err:  "invalid dataset: gzip: EOF",
+			err:  "invalid data: no data found",
 		},
 		{
 			name: "Wrong type",
@@ -338,6 +338,16 @@ func TestNew_BadData(t *testing.T) {
 			},
 			err: "invalid dataset: last coordinate not same as first for " +
 				"polygon: [1 2 3 4 5 6 7 8]",
+		},
+		{
+			name: "Bad base64",
+			in:   func() []byte { return []byte(`this is not base 64!`) },
+			err:  "invalid dataset: base64: illegal base64 data at input byte 4",
+		},
+		{
+			name: "Bad compression",
+			in:   func() []byte { return []byte(`dGhpcyBpcyBub3QgU29tcHJIc3NIZA==`) },
+			err:  "invalid dataset: gzip: invalid header",
 		},
 	}
 	for _, test := range testdata {

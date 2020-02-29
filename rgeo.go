@@ -25,7 +25,6 @@ to be near specific borders I would advise checking the data beforehand (links
 to which are in the files). If you want to use your own dataset, check out the
 datagen folder.
 
-
 Installation
 
 	go get github.com/sams96/rgeo
@@ -50,10 +49,11 @@ import (
 	"github.com/twpayne/go-geom/encoding/geojson"
 )
 
-// ErrLocationNotFound is returned when no country is found for given coordinates
+// ErrLocationNotFound is returned when no country is found for given
+// coordinates.
 var ErrLocationNotFound = errors.Errorf("country not found")
 
-// Location is the return type for ReverseGeocode
+// Location is the return type for ReverseGeocode.
 type Location struct {
 	// Commonly used country name
 	Country string `json:"country,omitempty"`
@@ -77,7 +77,7 @@ type Location struct {
 	City string `json:"city,omitempty"`
 }
 
-// Rgeo is the type used to hold pre-created polygons for reverse geocoding
+// Rgeo is the type used to hold pre-created polygons for reverse geocoding.
 type Rgeo struct {
 	index *s2.ShapeIndex
 	locs  map[s2.Shape]Location
@@ -86,14 +86,14 @@ type Rgeo struct {
 
 // Go generate commands to regenerate the included datasets, this assumes you
 // have the GeoJSON files from
-// https://github.com/nvkelso/natural-earth-vector/tree/master/geojson
+// https://github.com/nvkelso/natural-earth-vector/tree/master/geojson.
 //go:generate go run datagen/datagen.go -ne -o Countries110.go ne_110m_admin_0_countries.geojson
 //go:generate go run datagen/datagen.go -ne -o Countries10.go ne_10m_admin_0_countries.geojson
 //go:generate go run datagen/datagen.go -ne -o Provinces10.go -merge ne_10m_admin_0_countries.geojson ne_10m_admin_1_states_provinces.geojson
 //go:generate go run datagen/datagen.go -ne -o Cities10.go ne_10m_urban_areas_landscan.geojson
 
-// New returns an Rgeo struct which can then be used with ReverseGeocode. Takes
-// any number of datasets as an argument. The included datasets are:
+// New returns an Rgeo struct which can then be used with ReverseGeocode. It
+// takes any number of datasets as an argument. The included datasets are:
 // Countries110, Countries10, Provinces10 and Cities10. Provinces10 includes all
 // of the country information so if that's all you want don't use Countries as
 // well. Cities10 only includes cities so you'll probably want to use
@@ -104,6 +104,10 @@ func New(datasets ...func() []byte) (*Rgeo, error) {
 
 	for _, dataset := range datasets {
 		dat := dataset()
+
+		if len(dat) <= 0 {
+			return nil, errors.New("invalid data: no data found")
+		}
 
 		// Decode dataset
 		dec := make([]byte, len(dat))
@@ -118,13 +122,13 @@ func New(datasets ...func() []byte) (*Rgeo, error) {
 
 		zr, err := gzip.NewReader(&b)
 		if err != nil {
-			return nil, errors.Wrap(err, "invalid dataset: gzip")
+			return nil, errors.Wrap(err, "invalid dataset")
 		}
 
 		// Parse GeoJSON
 		var tfc geojson.FeatureCollection
 		if err := json.NewDecoder(zr).Decode(&tfc); err != nil {
-			return nil, errors.Wrap(err, "invalid dataset")
+			return nil, errors.Wrap(err, "invalid dataset: JSON")
 		}
 
 		if err := zr.Close(); err != nil {
@@ -159,11 +163,11 @@ func New(datasets ...func() []byte) (*Rgeo, error) {
 	return ret, nil
 }
 
-// ReverseGeocode returns the country in which the given coordinate is located
+// ReverseGeocode returns the country in which the given coordinate is located.
 //
 // The input is a geom.Coord, which is just a []float64 with the longitude
-// in the zeroth position and the latitude in the first position.
-// (i.e. []float64{lon, lat})
+// in the zeroth position and the latitude in the first position
+// (i.e. []float64{lon, lat}).
 func (r *Rgeo) ReverseGeocode(loc geom.Coord) (Location, error) {
 	res := r.query.ContainingShapes(pointFromCoord(loc))
 	if len(res) == 0 {
@@ -173,7 +177,7 @@ func (r *Rgeo) ReverseGeocode(loc geom.Coord) (Location, error) {
 	return r.combineLocations(res), nil
 }
 
-// combineLocations combines the Locations for the given s2 Shapes
+// combineLocations combines the Locations for the given s2 Shapes.
 func (r *Rgeo) combineLocations(s []s2.Shape) (l Location) {
 	for _, shape := range s {
 		loc := r.locs[shape]
@@ -194,7 +198,7 @@ func (r *Rgeo) combineLocations(s []s2.Shape) (l Location) {
 	return
 }
 
-// firstNonEmpty returns the first non empty parameter
+// firstNonEmpty returns the first non empty parameter.
 func firstNonEmpty(s ...string) string {
 	for _, i := range s {
 		if i != "" {
@@ -205,7 +209,7 @@ func firstNonEmpty(s ...string) string {
 	return ""
 }
 
-// Get the relevant strings from the GeoJSON properties
+// Get the relevant strings from the GeoJSON properties.
 func getLocationStrings(p map[string]interface{}) Location {
 	return Location{
 		Country:      getPropertyString(p, "ADMIN", "admin"),
@@ -222,7 +226,7 @@ func getLocationStrings(p map[string]interface{}) Location {
 }
 
 // getPropertyString gets the value from a map given the key as a string, or
-// from the next given key if the previous fails
+// from the next given key if the previous fails.
 func getPropertyString(m map[string]interface{}, keys ...string) (s string) {
 	var ok bool
 	for _, k := range keys {
@@ -235,7 +239,7 @@ func getPropertyString(m map[string]interface{}, keys ...string) (s string) {
 	return
 }
 
-// polygonFromGeometry converts a geom.T to an s2.Polygon
+// polygonFromGeometry converts a geom.T to an s2 Polygon.
 func polygonFromGeometry(g geom.T) (*s2.Polygon, error) {
 	var (
 		polygon *s2.Polygon
@@ -258,7 +262,7 @@ func polygonFromGeometry(g geom.T) (*s2.Polygon, error) {
 	return polygon, nil
 }
 
-// Converts a `*geom.MultiPolygon` to an `*s2.Polygon`
+// Converts a geom MultiPolygon to an s2 Polygon.
 func polygonFromMultiPolygon(p *geom.MultiPolygon) (*s2.Polygon, error) {
 	var loops []*s2.Loop
 
@@ -274,15 +278,15 @@ func polygonFromMultiPolygon(p *geom.MultiPolygon) (*s2.Polygon, error) {
 	return s2.PolygonFromLoops(loops), nil
 }
 
-// Converts a `*geom.Polygon` to an `*s2.Polygon`
+// Converts a geom Polygon to an s2 Polygon.
 func polygonFromPolygon(p *geom.Polygon) (*s2.Polygon, error) {
 	loops, err := loopSliceFromPolygon(p)
 	return s2.PolygonFromLoops(loops), err
 }
 
-// Converts a `*geom.Polygon` to slice of `*s2.Loop`
+// Converts a geom Polygon to slice of s2 Loop.
 //
-// Modified from types.loopFromPolygon from github.com/dgraph-io/dgraph
+// Modified from types.loopFromPolygon from github.com/dgraph-io/dgraph.
 func loopSliceFromPolygon(p *geom.Polygon) ([]*s2.Loop, error) {
 	var loops []*s2.Loop
 
@@ -372,7 +376,7 @@ func pointFromCoord(r geom.Coord) s2.Point {
 	return s2.PointFromLatLng(ll)
 }
 
-// String method for type Location
+// String method for type Location.
 func (l Location) String() string {
 	ret := "<Location>"
 
