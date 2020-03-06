@@ -22,7 +22,7 @@ own dataset, check out
    but on my laptop rgeo can run at under 800ns/op.
  - **Local** - Rgeo doesn't require pinging some API, most of which either cost
    money to use or have severe rate limits.
- - **Lightweight** - The rgeo repo is 141MB, which is large for a Go package but
+ - **Lightweight** - The rgeo repo is 32MB, which is large for a Go package but
    compared to the 800GB needed for a full planet install of
    [Nominatim](https://nominatim.org/release-docs/latest/admin/Installation/#hardware)
    it's miniscule.

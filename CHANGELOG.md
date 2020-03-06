@@ -16,6 +16,9 @@ data files are much smaller.
 
 ## [1.0.0] - 2020-02-27
 
+This release is now broken due to some large files being removed from the git
+history.
+
 ### Added
  - Province information to `Location`.
  - New dataset `Cities10` and added `City` field to `Location`.
@@ -29,6 +32,9 @@ data files are much smaller.
  - 100% test coverage.
 
 ## [0.0.5] - 2020-02-23
+
+This release is now broken due to some large files being removed from the git
+history.
 
 ### Added
  - JSON strings in `Location` for more idiomatic marshalling .

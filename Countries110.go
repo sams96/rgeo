@@ -1,4 +1,4 @@
-// This file is generated
+// Code generated DO NOT EDIT.
 
 package rgeo
 

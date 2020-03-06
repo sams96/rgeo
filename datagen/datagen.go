@@ -58,7 +58,7 @@ import (
 	"github.com/twpayne/go-geom/encoding/geojson"
 )
 
-const tp = `// This file is generated
+const tp = `// Code generated DO NOT EDIT.
 
 package rgeo
 

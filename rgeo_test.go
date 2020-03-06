@@ -349,6 +349,11 @@ func TestNew_BadData(t *testing.T) {
 			in:   func() []byte { return []byte(`dGhpcyBpcyBub3QgU29tcHJIc3NIZA==`) },
 			err:  "invalid dataset: gzip: invalid header",
 		},
+		{
+			name: "Bad JSON",
+			in:   func() []byte { return []byte(compressData(t, `this is not JSON`)) },
+			err:  "invalid dataset: JSON: invalid character 'h' in literal true (expecting 'r')",
+		},
 	}
 	for _, test := range testdata {
 		test := test
