@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2020-03-06
+
+I broke v1.1.0 when removing the large files from the git history so this will
+replace it.
+
+### Changed
+ - Much smaller repo
+ - Readme rewrite
+
 ## [1.1.0] - 2020-02-28
 
 Mostly just bumping the version to see if pkg.go.dev will update now the
