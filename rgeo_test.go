@@ -209,7 +209,62 @@ var testdata = []struct {
 	},
 }
 
+func TestReverseGeocode(t *testing.T) {
+	testgeo := `{
+		"type":"FeatureCollection",
+			"features":[
+				{"type":"Feature",
+				"properties":{"ISO_A3":"TST"},
+				"geometry":{"type":"Polygon",
+					"coordinates":[[[0,52],[1,52],[1,53],[0,53],[0,52]]]}}
+			]
+		}`
+
+	var testdata = []struct {
+		name     string
+		in       []float64
+		err      error
+		expected Location
+	}{
+		{
+			name:     "in",
+			in:       []float64{0.5, 52.5},
+			err:      nil,
+			expected: Location{CountryCode3: "TST"},
+		},
+		{
+			name:     "out",
+			in:       []float64{0, 0},
+			err:      ErrLocationNotFound,
+			expected: Location{},
+		},
+	}
+
+	r, err := New(func() []byte { return compressData(t, testgeo) })
+	if err != nil {
+		t.Error(err)
+	}
+
+	for _, test := range testdata {
+		test := test
+
+		t.Run(test.name, func(t *testing.T) {
+			result, err := r.ReverseGeocode(test.in)
+			if err != test.err {
+				t.Errorf("expected error: %s\n got: %s\n", test.err, err)
+			}
+			if diff := deep.Equal(test.expected, result); diff != nil {
+				t.Error(diff)
+			}
+		})
+	}
+}
+
 func TestReverseGeocode_Countries(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test (countries) for short mode")
+	}
+
 	for _, dataset := range []func() []byte{Countries110, Countries10} {
 		r, err := New(dataset)
 		if err != nil {
@@ -237,6 +292,10 @@ func TestReverseGeocode_Countries(t *testing.T) {
 }
 
 func TestReverseGeocode_Provinces(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integraion test (provinces) in short mode")
+	}
+
 	r, err := New(Provinces10)
 	if err != nil {
 		t.Error(err)
@@ -260,6 +319,10 @@ func TestReverseGeocode_Provinces(t *testing.T) {
 }
 
 func TestReverseGeocode_Cities(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test (cities) in short mode")
+	}
+
 	r, err := New(Provinces10, Cities10)
 	if err != nil {
 		t.Error(err)
