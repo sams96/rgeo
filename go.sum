@@ -45,8 +45,8 @@ github.com/stretchr/testify v1.2.2/go.mod h1:a8OnRcib4nhh0OaRAV+Yts87kKdq0PP7pXf
 github.com/stretchr/testify v1.4.0/go.mod h1:j7eGeouHqKxXV5pUuKE4zz7dFj8WfuZ+81PSLYec5m4=
 github.com/stretchr/testify v1.6.1 h1:hDPOHmpOpP40lSULcqw7IrRb/u7w6RpDC9399XyoNd0=
 github.com/stretchr/testify v1.6.1/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
-github.com/twpayne/go-geom v1.4.0 h1:gtI+ClrojsGDl0SXXNAwPUtPxanyodQzXg8mliV3d/w=
-github.com/twpayne/go-geom v1.4.0/go.mod h1:k/zktXdL+qnA6OgKsdEGUTA17jbQ2ZPTUa3CCySuGpE=
+github.com/twpayne/go-geom v1.4.1 h1:LeivFqaGBRfyg0XJJ9pkudcptwhSSrYN9KZUW6HcgdA=
+github.com/twpayne/go-geom v1.4.1/go.mod h1:k/zktXdL+qnA6OgKsdEGUTA17jbQ2ZPTUa3CCySuGpE=
 github.com/twpayne/go-kml v1.5.2/go.mod h1:kz8jAiIz6FIdU2Zjce9qGlVtgFYES9vt7BTPBHf5jl4=
 github.com/twpayne/go-polyline v1.0.0/go.mod h1:ICh24bcLYBX8CknfvNPKqoTbe+eg+MX1NPyJmSBo7pU=
 github.com/twpayne/go-waypoint v0.0.0-20200706203930-b263a7f6e4e8/go.mod h1:qj5pHncxKhu9gxtZEYWypA/z097sxhFlbTyOyt9gcnU=
