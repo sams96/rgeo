@@ -18,7 +18,6 @@ package rgeo
 import (
 	"bytes"
 	"compress/gzip"
-	"encoding/base64"
 	"fmt"
 	"math/rand"
 	"testing"
@@ -319,7 +318,6 @@ func TestReverseGeocode_Provinces(t *testing.T) {
 }
 
 func TestReverseGeocode_Cities(t *testing.T) {
-	t.Parallel()
 	if testing.Short() {
 		t.Skip("Skipping integration test (cities) in short mode.")
 	}
@@ -332,7 +330,6 @@ func TestReverseGeocode_Cities(t *testing.T) {
 	for _, test := range testdata {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
-			t.Parallel()
 			result, err := r.ReverseGeocode(test.in)
 			if err != test.err {
 				t.Errorf("expected error: %s\n got: %s\n", test.err, err)
@@ -403,11 +400,6 @@ func TestNew_BadData(t *testing.T) {
 			},
 			err: "invalid dataset: last coordinate not same as first for " +
 				"polygon: [1 2 3 4 5 6 7 8]",
-		},
-		{
-			name: "Bad base64",
-			in:   func() []byte { return []byte(`this is not base 64!`) },
-			err:  "invalid dataset: base64: illegal base64 data at input byte 4",
 		},
 		{
 			name: "Bad compression",
@@ -531,7 +523,7 @@ func ExampleRgeo_ReverseGeocode_city() {
 	}
 
 	fmt.Println(loc)
-	// Output: <Location> Sapporo, Hokkaido, Japan (JPN), Asia
+	// Output: <Location> Sapporo, Hokkaidō, Japan (JPN), Asia
 }
 
 func BenchmarkReverseGeocode_110(b *testing.B) {
@@ -615,6 +607,7 @@ func BenchmarkNewCity(b *testing.B) {
 		}
 	}
 }
+
 func compressData(t *testing.T, in string) []byte {
 	var buf bytes.Buffer
 	zw := gzip.NewWriter(&buf)
@@ -627,8 +620,5 @@ func compressData(t *testing.T, in string) []byte {
 		t.Error(err)
 	}
 
-	b := make([]byte, base64.StdEncoding.EncodedLen(buf.Len()))
-	base64.StdEncoding.Encode(b, buf.Bytes())
-
-	return b
+	return buf.Bytes()
 }

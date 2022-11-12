@@ -39,7 +39,6 @@ package rgeo
 import (
 	"bytes"
 	"compress/gzip"
-	"encoding/base64"
 	"encoding/json"
 	"strings"
 
@@ -87,10 +86,10 @@ type Rgeo struct {
 // Go generate commands to regenerate the included datasets, this assumes you
 // have the GeoJSON files from
 // https://github.com/nvkelso/natural-earth-vector/tree/master/geojson.
-//go:generate go run datagen/datagen.go -ne -o Countries110.go ne_110m_admin_0_countries.geojson
-//go:generate go run datagen/datagen.go -ne -o Countries10.go ne_10m_admin_0_countries.geojson
-//go:generate go run datagen/datagen.go -ne -o Provinces10.go -merge ne_10m_admin_0_countries.geojson ne_10m_admin_1_states_provinces.geojson
-//go:generate go run datagen/datagen.go -ne -o Cities10.go ne_10m_urban_areas_landscan.geojson
+// go run datagen/datagen.go -ne -o Countries110 ne_110m_admin_0_countries.geojson
+// go run datagen/datagen.go -ne -o Countries10 ne_10m_admin_0_countries.geojson
+// go run datagen/datagen.go -ne -o Provinces10 -merge ne_10m_admin_0_countries.geojson ne_10m_admin_1_states_provinces.geojson
+// go run datagen/datagen.go -ne -o Cities10 ne_10m_urban_areas_landscan.geojson
 
 // New returns an Rgeo struct which can then be used with ReverseGeocode. It
 // takes any number of datasets as an argument. The included datasets are:
@@ -103,18 +102,10 @@ func New(datasets ...func() []byte) (*Rgeo, error) {
 	var fc geojson.FeatureCollection
 
 	for _, dataset := range datasets {
-		dat := dataset()
+		dec := dataset()
 
-		if len(dat) <= 0 {
+		if len(dec) <= 0 {
 			return nil, errors.New("invalid data: no data found")
-		}
-
-		// Decode dataset
-		dec := make([]byte, len(dat))
-
-		_, err := base64.StdEncoding.Decode(dec, dat)
-		if err != nil {
-			return nil, errors.Wrap(err, "invalid dataset: base64")
 		}
 
 		var b bytes.Buffer
