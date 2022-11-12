@@ -319,8 +319,9 @@ func TestReverseGeocode_Provinces(t *testing.T) {
 }
 
 func TestReverseGeocode_Cities(t *testing.T) {
+	t.Parallel()
 	if testing.Short() {
-		t.Skip("Skipping integration test (cities) in short mode")
+		t.Skip("Skipping integration test (cities) in short mode.")
 	}
 
 	r, err := New(Provinces10, Cities10)
@@ -331,6 +332,7 @@ func TestReverseGeocode_Cities(t *testing.T) {
 	for _, test := range testdata {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
 			result, err := r.ReverseGeocode(test.in)
 			if err != test.err {
 				t.Errorf("expected error: %s\n got: %s\n", test.err, err)
@@ -605,6 +607,14 @@ func BenchmarkNew(b *testing.B) {
 	}
 }
 
+func BenchmarkNewCity(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		_, err := New(Cities10)
+		if err != nil {
+			b.Error(err)
+		}
+	}
+}
 func compressData(t *testing.T, in string) []byte {
 	var buf bytes.Buffer
 	zw := gzip.NewWriter(&buf)
