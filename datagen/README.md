@@ -9,9 +9,9 @@ GeoJSON file are different.
 
 ### Usage
 
-    go run datagen.go -o outfile.go infile.geojson
+    go run datagen.go -o outfile infile.geojson
 
-The variable containing the data will be named `outfile`.
+The variable containing the data will be named `outfile.gz`.
 
 rgeo reads the location information from the following GeoJSON properties:
 

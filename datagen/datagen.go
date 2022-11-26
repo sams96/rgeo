@@ -43,38 +43,18 @@ rgeo reads the location information from the following GeoJSON properties:
 package main
 
 import (
-	"bufio"
 	"bytes"
 	"compress/gzip"
-	"encoding/base64"
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"strings"
-	"text/template"
 
 	"github.com/twpayne/go-geom/encoding/geojson"
 )
-
-const tp = `// Code generated DO NOT EDIT.
-
-package rgeo
-
-// {{.Varname}} {{.Comment}}
-func {{.Varname}}() []byte {
-	// nolint
-	return []byte(` + "`" + `{{.JSON}}` + "`" + `)
-}
-`
-
-// viewData fills template tp
-type viewData struct {
-	Varname string
-	Comment string
-	JSON    string
-}
 
 func main() {
 	// Read args
@@ -94,15 +74,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// Open outfile
-	outfile, err := os.Create(*outFileName)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer outfile.Close()
-
-	w := bufio.NewWriter(outfile)
-
 	var pre string
 	if *neCommentFlag {
 		pre = "https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/"
@@ -120,35 +91,21 @@ func main() {
 
 	// Compress data
 	var buf bytes.Buffer
-	zw := gzip.NewWriter(&buf)
+	zw, _ := gzip.NewWriterLevel(&buf, 9)
 
 	if _, err := zw.Write(resp); err != nil {
 		log.Fatal(err)
 	}
-
+	zw.Flush()
 	if err := zw.Close(); err != nil {
 		log.Fatal(err)
 	}
 
-	vd := viewData{
-		Varname: strings.TrimSuffix(*outFileName, ".go"),
-		Comment: "uses data from " + printSlice(prefixSlice(pre, files)),
-		JSON:    base64.StdEncoding.EncodeToString(buf.Bytes()),
-	}
+	f, _ := os.Create(fmt.Sprintf("%s.gz", *outFileName))
+	io.Copy(f, &buf)
 
-	// Create template
-	tmpl, err := template.New("tmpl").Parse(tp)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// Write template
-	err = tmpl.ExecuteTemplate(w, "tmpl", vd)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	w.Flush()
+	fReadme, _ := os.Create(fmt.Sprintf("%s.txt", *outFileName))
+	fReadme.WriteString(fmt.Sprintf("%s %s", strings.TrimSuffix(*outFileName, ".go"), "uses data from "+printSlice(prefixSlice(pre, files))))
 }
 
 func readInputs(in []string, mergeFileName string) (*geojson.FeatureCollection, error) {

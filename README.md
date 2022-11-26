@@ -55,7 +55,7 @@ if err != nil {
 }
 
 fmt.Println(loc)
-// Output: <Location> Sapporo, Hokkaido, Japan (JPN), Asia
+// Output: <Location> Sapporo, Hokkaidō, Japan (JPN), Asia
 ```
 
 First initialise rgeo using `rgeo.New`,

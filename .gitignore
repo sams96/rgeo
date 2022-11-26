@@ -15,3 +15,4 @@
 # vendor/
 
 *.geojson
+datagen/datagen
