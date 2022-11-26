@@ -1,5 +1,5 @@
 name: continuous-integration
-on: [push]
+on: [push, pull_request]
 jobs:
   ubuntu:
     runs-on: ubuntu-latest
