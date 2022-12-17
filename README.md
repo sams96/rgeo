@@ -1,5 +1,5 @@
 # rgeo
-[![](https://img.shields.io/github/workflow/status/sams96/rgeo/continuous-integration?style=for-the-badge)](https://github.com/sams96/rgeo/actions?query=workflow%3Acontinuous-integration)
+[![](https://img.shields.io/github/actions/workflow/status/sams96/rgeo/continuous-integration.yml?branch=master&style=for-the-badge)](https://github.com/sams96/rgeo/actions?query=workflow%3Acontinuous-integration)
 [![](https://goreportcard.com/badge/github.com/sams96/rgeo?style=for-the-badge)](https://goreportcard.com/report/github.com/sams96/rgeo)
 [![Codecov](https://img.shields.io/codecov/c/github/sams96/rgeo?logo=codecov&style=for-the-badge)](https://codecov.io/gh/sams96/rgeo)
 [![Release](https://img.shields.io/github/tag/sams96/rgeo.svg?label=release&color=24B898&logo=github&style=for-the-badge)](https://github.com/sams96/rgeo/releases/latest)
