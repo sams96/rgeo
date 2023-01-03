@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2023-01-03
+
+It's been a while since the last release, so all of the dependencies have been
+updated, but this is mostly about the first user contribution.
+
+## Changed
+ - Moved to using Go embed for the data files, thanks to @benjojo (#18)
+ - Updated to Go 1.19
+ - Updated other dependencies
+
 ## [1.1.1] - 2020-03-06
 
 I broke v1.1.0 when removing the large files from the git history so this will
