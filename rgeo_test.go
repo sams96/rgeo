@@ -19,6 +19,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"fmt"
+	"github.com/twpayne/go-geom"
 	"math/rand"
 	"testing"
 
@@ -524,6 +525,21 @@ func ExampleRgeo_ReverseGeocode_city() {
 
 	fmt.Println(loc)
 	// Output: <Location> Sapporo, Hokkaidō, Japan (JPN), Asia
+}
+
+func ExampleRgeo_ReverseGeocode_snapping() {
+	r, err := New(Provinces10)
+	if err != nil {
+		// Handle error
+	}
+
+	loc, err := r.ReverseGeocodeSnapping(geom.Coord{141.5439, 40.5588})
+	if err != nil {
+		// Handle error
+	}
+
+	fmt.Println(loc)
+	// Output: <Location> Aomori, Japan,
 }
 
 func BenchmarkReverseGeocode_110(b *testing.B) {
