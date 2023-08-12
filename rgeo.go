@@ -40,17 +40,18 @@ import (
 	"bytes"
 	"compress/gzip"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/golang/geo/s2"
-	"github.com/pkg/errors"
 	"github.com/twpayne/go-geom"
 	"github.com/twpayne/go-geom/encoding/geojson"
 )
 
 // ErrLocationNotFound is returned when no country is found for given
 // coordinates.
-var ErrLocationNotFound = errors.Errorf("country not found")
+var ErrLocationNotFound = errors.New("country not found")
 
 // Location is the return type for ReverseGeocode.
 type Location struct {
@@ -101,25 +102,25 @@ func New(datasets ...func() []byte) (*Rgeo, error) {
 	// Parse GeoJSON
 	var fc geojson.FeatureCollection
 
-	for _, dataset := range datasets {
+	for i, dataset := range datasets {
 		br := bytes.NewReader(dataset())
 		if br.Len() == 0 {
-			return nil, errors.New("invalid data: no data found")
+			return nil, fmt.Errorf("no data in dataset %d", i)
 		}
 
 		zr, err := gzip.NewReader(br)
 		if err != nil {
-			return nil, errors.Wrap(err, "invalid dataset")
+			return nil, fmt.Errorf("decompression failed for dataset %d: %w", i, err)
 		}
 
 		// Parse GeoJSON
 		var tfc geojson.FeatureCollection
 		if err := json.NewDecoder(zr).Decode(&tfc); err != nil {
-			return nil, errors.Wrap(err, "invalid dataset: JSON")
+			return nil, fmt.Errorf("invalid JSON in dataset %d: %w", i, err)
 		}
 
 		if err := zr.Close(); err != nil {
-			return nil, errors.Wrap(err, "failed to close gzip reader")
+			return nil, fmt.Errorf("failed to close gzip reader for dataset %d: %w", i, err)
 		}
 
 		fc.Features = append(fc.Features, tfc.Features...)
@@ -134,7 +135,7 @@ func New(datasets ...func() []byte) (*Rgeo, error) {
 	for _, c := range fc.Features {
 		p, err := polygonFromGeometry(c.Geometry)
 		if err != nil {
-			return nil, errors.Wrap(err, "invalid dataset")
+			return nil, fmt.Errorf("bad polygon in geometry: %w", err)
 		}
 
 		ret.index.Add(p)
@@ -239,7 +240,7 @@ func polygonFromGeometry(g geom.T) (*s2.Polygon, error) {
 	case *geom.MultiPolygon:
 		polygon, err = polygonFromMultiPolygon(t)
 	default:
-		return nil, errors.Errorf("needs Polygon or MultiPolygon")
+		return nil, errors.New("needs Polygon or MultiPolygon")
 	}
 
 	if err != nil {
@@ -282,11 +283,11 @@ func loopSliceFromPolygon(p *geom.Polygon) ([]*s2.Loop, error) {
 		n := r.NumCoords()
 
 		if n < 4 {
-			return nil, errors.Errorf("can't convert ring with less than 4 points")
+			return nil, errors.New("can't convert ring with less than 4 points")
 		}
 
 		if !r.Coord(0).Equal(geom.XY, r.Coord(n-1)) {
-			return nil, errors.Errorf(
+			return nil, fmt.Errorf(
 				"last coordinate not same as first for polygon: %+v", p.FlatCoords())
 		}
 
