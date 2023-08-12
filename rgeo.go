@@ -25,11 +25,11 @@ to be near specific borders I would advise checking the data beforehand (links
 to which are in the files). If you want to use your own dataset, check out the
 datagen folder.
 
-Installation
+# Installation
 
 	go get github.com/sams96/rgeo
 
-Contributing
+# Contributing
 
 Contributions are welcome, I haven't got any guidelines or anything so maybe
 just make an issue first.
@@ -44,7 +44,7 @@ import (
 
 	"github.com/golang/geo/s2"
 	"github.com/pkg/errors"
-	geom "github.com/twpayne/go-geom"
+	"github.com/twpayne/go-geom"
 	"github.com/twpayne/go-geom/encoding/geojson"
 )
 
