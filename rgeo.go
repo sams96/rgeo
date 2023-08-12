@@ -102,16 +102,12 @@ func New(datasets ...func() []byte) (*Rgeo, error) {
 	var fc geojson.FeatureCollection
 
 	for _, dataset := range datasets {
-		dec := dataset()
-
-		if len(dec) <= 0 {
+		br := bytes.NewReader(dataset())
+		if br.Len() == 0 {
 			return nil, errors.New("invalid data: no data found")
 		}
 
-		var b bytes.Buffer
-		b.Write(dec)
-
-		zr, err := gzip.NewReader(&b)
+		zr, err := gzip.NewReader(br)
 		if err != nil {
 			return nil, errors.Wrap(err, "invalid dataset")
 		}

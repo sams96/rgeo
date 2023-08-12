@@ -1,36 +1,32 @@
 package rgeo
 
-import (
-	"embed"
-	"fmt"
-	"io"
-)
+// embedding files individually here to allow the linker to strip out unused ones
+import _ "embed"
 
-//go:embed data/*
-var dataDir embed.FS
+//go:embed data/Cities10.gz
+var cities10 []byte
 
 func Cities10() []byte {
-	return readEmbedFile("Cities10.gz")
+	return cities10
 }
+
+//go:embed data/Countries10.gz
+var countries10 []byte
 
 func Countries10() []byte {
-	return readEmbedFile("Countries10.gz")
+	return countries10
 }
+
+//go:embed data/Countries110.gz
+var countries110 []byte
 
 func Countries110() []byte {
-	return readEmbedFile("Countries110.gz")
+	return countries110
 }
+
+//go:embed data/Provinces10.gz
+var provinces10 []byte
 
 func Provinces10() []byte {
-	return readEmbedFile("Provinces10.gz")
-}
-
-func readEmbedFile(name string) []byte {
-	f, err := dataDir.Open(fmt.Sprintf("data/%s", name))
-	if err != nil {
-		panic(fmt.Sprintf("internal embedded geojson open error %v", err))
-	}
-
-	b, _ := io.ReadAll(f)
-	return b
+	return provinces10
 }
