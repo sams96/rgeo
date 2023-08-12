@@ -252,7 +252,7 @@ func polygonFromGeometry(g geom.T) (*s2.Polygon, error) {
 
 // Converts a geom MultiPolygon to an s2 Polygon.
 func polygonFromMultiPolygon(p *geom.MultiPolygon) (*s2.Polygon, error) {
-	var loops []*s2.Loop
+	loops := make([]*s2.Loop, 0, p.NumPolygons())
 
 	for i := 0; i < p.NumPolygons(); i++ {
 		this, err := loopSliceFromPolygon(p.Polygon(i))
@@ -276,7 +276,7 @@ func polygonFromPolygon(p *geom.Polygon) (*s2.Polygon, error) {
 //
 // Modified from types.loopFromPolygon from github.com/dgraph-io/dgraph.
 func loopSliceFromPolygon(p *geom.Polygon) ([]*s2.Loop, error) {
-	var loops []*s2.Loop
+	loops := make([]*s2.Loop, 0, p.NumLinearRings())
 
 	for i := 0; i < p.NumLinearRings(); i++ {
 		r := p.LinearRing(i)
