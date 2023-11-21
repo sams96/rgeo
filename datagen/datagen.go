@@ -102,10 +102,13 @@ func main() {
 	}
 
 	f, _ := os.Create(fmt.Sprintf("%s.gz", *outFileName))
-	io.Copy(f, &buf)
+	_, err = io.Copy(f, &buf)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	fReadme, _ := os.Create(fmt.Sprintf("%s.txt", *outFileName))
-	fReadme.WriteString(fmt.Sprintf("%s %s", strings.TrimSuffix(*outFileName, ".go"), "uses data from "+printSlice(prefixSlice(pre, files))))
+	fmt.Fprintf(fReadme, "%s %s", strings.TrimSuffix(*outFileName, ".go"), "uses data from "+printSlice(prefixSlice(pre, files)))
 }
 
 func readInputs(in []string, mergeFileName string) (*geojson.FeatureCollection, error) {
