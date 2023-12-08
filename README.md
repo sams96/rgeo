@@ -69,6 +69,7 @@ are:
  - `Countries10` - The same as above but with more detail.
  - `Provinces10` - Includes province information as well as country, so can
    still be used alone.
+ - `US_Counties10` - Includes only US county information.
  - `Cities10` - Just city information, if you want provinces and/or countries as
    well use one of the above datasets with it.
 Once initialised you can use `ReverseGeocode` on the value returned by `New`,
@@ -106,6 +107,8 @@ type Location struct {
 
 	// ISO 3166-2 code
 	ProvinceCode string `json:"province_code,omitempty"`
+
+	County string `json:"county,omitempty"`
 
 	City string `json:"city,omitempty"`
 }

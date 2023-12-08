@@ -74,6 +74,8 @@ type Location struct {
 	// ISO 3166-2 code
 	ProvinceCode string `json:"province_code,omitempty"`
 
+	County string `json:"county,omitempty"`
+
 	City string `json:"city,omitempty"`
 }
 
@@ -179,6 +181,7 @@ func (r *Rgeo) combineLocations(s []s2.Shape) (l Location) {
 			SubRegion:    firstNonEmpty(l.SubRegion, loc.SubRegion),
 			Province:     firstNonEmpty(l.Province, loc.Province),
 			ProvinceCode: firstNonEmpty(l.ProvinceCode, loc.ProvinceCode),
+			County:       firstNonEmpty(l.County, loc.County),
 			City:         firstNonEmpty(l.City, loc.City),
 		}
 	}
@@ -199,7 +202,7 @@ func firstNonEmpty(s ...string) string {
 
 // Get the relevant strings from the GeoJSON properties.
 func getLocationStrings(p map[string]interface{}) Location {
-	return Location{
+	loc := Location{
 		Country:      getPropertyString(p, "ADMIN", "admin"),
 		CountryLong:  getPropertyString(p, "FORMAL_EN"),
 		CountryCode2: getPropertyString(p, "ISO_A2"),
@@ -211,6 +214,10 @@ func getLocationStrings(p map[string]interface{}) Location {
 		ProvinceCode: getPropertyString(p, "iso_3166_2"),
 		City:         strings.TrimSuffix(getPropertyString(p, "name_conve"), "2"),
 	}
+	if t, ok := p["TYPE"]; ok && t == "County" {
+		loc.County = getPropertyString(p, "NAME")
+	}
+	return loc
 }
 
 // getPropertyString gets the value from a map given the key as a string, or
