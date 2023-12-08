@@ -122,6 +122,7 @@ var testdata = []struct {
 			SubRegion:    "Northern America",
 			Province:     "Alaska",
 			ProvinceCode: "US-AK",
+			County:       "", // unknown
 			City:         "Anchorage",
 		},
 	},
@@ -188,6 +189,7 @@ var testdata = []struct {
 			SubRegion:    "Northern America",
 			Province:     "North Dakota",
 			ProvinceCode: "US-ND",
+			County:       "Burke",
 		},
 	},
 	{
@@ -204,6 +206,23 @@ var testdata = []struct {
 			SubRegion:    "Northern America",
 			Province:     "Saskatchewan",
 			ProvinceCode: "CA-SK",
+		},
+	},
+	{
+		name: "Stevens County",
+		in:   []float64{-117.843, 48.392},
+		err:  nil,
+		expected: Location{
+			Country:      "United States of America",
+			CountryLong:  "United States of America",
+			CountryCode2: "US",
+			CountryCode3: "USA",
+			Continent:    "North America",
+			Region:       "Americas",
+			SubRegion:    "Northern America",
+			Province:     "Washington",
+			ProvinceCode: "US-WA",
+			County:       "Stevens",
 		},
 	},
 }
@@ -275,6 +294,7 @@ func TestReverseGeocode_Countries(t *testing.T) {
 
 			test.expected.Province = ""
 			test.expected.ProvinceCode = ""
+			test.expected.County = ""
 			test.expected.City = ""
 
 			t.Run(test.name, func(t *testing.T) {
@@ -296,6 +316,34 @@ func TestReverseGeocode_Provinces(t *testing.T) {
 	}
 
 	r, err := New(Provinces10)
+	if err != nil {
+		t.Error(err)
+	}
+
+	for _, test := range testdata {
+		test := test
+
+		test.expected.County = ""
+		test.expected.City = ""
+
+		t.Run(test.name, func(t *testing.T) {
+			result, err := r.ReverseGeocode(test.in)
+			if err != test.err {
+				t.Errorf("expected error: %s\n got: %s\n", test.err, err)
+			}
+			if diff := deep.Equal(test.expected, result); diff != nil {
+				t.Error(diff)
+			}
+		})
+	}
+}
+
+func TestReverseGeocode_Counties(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test (counties) in short mode.")
+	}
+
+	r, err := New(Provinces10, US_Counties10)
 	if err != nil {
 		t.Error(err)
 	}
@@ -329,6 +377,9 @@ func TestReverseGeocode_Cities(t *testing.T) {
 
 	for _, test := range testdata {
 		test := test
+
+		test.expected.County = ""
+
 		t.Run(test.name, func(t *testing.T) {
 			result, err := r.ReverseGeocode(test.in)
 			if err != test.err {

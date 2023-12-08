@@ -30,3 +30,10 @@ var provinces10 []byte
 func Provinces10() []byte {
 	return provinces10
 }
+
+//go:embed data/US_Counties10.gz
+var us_counties10 []byte
+
+func US_Counties10() []byte {
+	return us_counties10
+}

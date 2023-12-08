@@ -1,0 +1,1 @@
+Counties10 uses data from https://github.com/nvkelso/natural-earth-vector/blob/master/geojson//home/ia/dev/nvkelso/natural-earth-vector/geojson/ne_10m_admin_2_counties.geojson
