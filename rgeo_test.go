@@ -18,6 +18,7 @@ package rgeo
 import (
 	"bytes"
 	"compress/gzip"
+	"errors"
 	"fmt"
 	"github.com/twpayne/go-geom"
 	"math/rand"
@@ -540,6 +541,74 @@ func ExampleRgeo_ReverseGeocode_snapping() {
 
 	fmt.Println(loc)
 	// Output: <Location> Aomori, Japan,
+}
+
+func TestTable(t *testing.T) {
+	type LookupFunc func(geom.Coord) (Location, error)
+
+	coordsFar := geom.Coord{139.0385841, 40.894911} // somewhere in the japanese sea
+	coordsClose := geom.Coord{141.5350, 40.5658}    // about 3km outside the country in the sea
+	coordsInside := geom.Coord{141.5317, 40.5205}   // inside the country
+
+	locationEmpty := Location{}
+	locationFound := Location{Country: "Japan", Province: "Aomori"}
+
+	r, err := New(Provinces10)
+	if err != nil {
+		// Handle error
+	}
+
+	tests := map[string]struct {
+		input    geom.Coord
+		expected Location
+		method   LookupFunc
+	}{
+		"[reverse] far": {
+			input:    coordsFar,
+			expected: locationEmpty,
+			method:   r.ReverseGeocode,
+		},
+		"[reverse] close": {
+			input:    coordsClose,
+			expected: locationEmpty,
+			method:   r.ReverseGeocode,
+		},
+		"[reverse] inside": {
+			input:    coordsInside,
+			expected: locationFound,
+			method:   r.ReverseGeocode,
+		},
+		"[snapping] far": {
+			input:    coordsFar,
+			expected: locationEmpty,
+			method:   r.ReverseGeocodeSnapping,
+		},
+		"[snapping] close": {
+			input:    coordsClose,
+			expected: locationFound,
+			method:   r.ReverseGeocodeSnapping,
+		},
+		"[snapping] inside": {
+			input:    coordsInside,
+			expected: locationFound,
+			method:   r.ReverseGeocodeSnapping,
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			actual, err := test.method(test.input)
+			if err != nil {
+				// Handle error
+			}
+
+			if actual.Country != test.expected.Country ||
+				actual.Province != test.expected.Province ||
+				(test.expected == locationEmpty && !errors.Is(err, ErrLocationNotFound)) {
+				t.Errorf("expected %q, got %q", test.expected, actual)
+			}
+		})
+	}
 }
 
 func BenchmarkReverseGeocode_110(b *testing.B) {
