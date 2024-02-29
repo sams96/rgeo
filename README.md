@@ -141,6 +141,30 @@ fmt.Printf("%s\n", loc.SubRegion)
 // Northern Europe
 ```
 
+### Data inaccuracy
+If you have troubles resolving the location of the coordinates due to GPS and/or
+data inaccuracy (e.g. at the coast, GPS might give you coordinates of a location
+several meters out in the water) you can use `ReverseGeocodeSnapping` instead of
+`ReverseGeocode`.
+
+```go
+func (r *Rgeo) ReverseGeocodeSnapping(loc geom.Coord) (Location, error)
+```
+
+It first tries to find the location using `ReverseGeocode` and only if that fails,
+it will look up the closest location in a default radius of 5km. This radius can
+be set via the `SetSnappingDistanceEarth` and `SetSnappingDistanceCustom` functions.
+
+```go
+func (r *Rgeo) SetSnappingDistanceEarth(d float64)
+func (r *Rgeo) SetSnappingDistanceCustom(d float64, radius float64)
+```
+
+`SetSnappingDistanceEarth` takes the `radius float64` in km, which is the search
+radius of the alternative location. If the dataset contains geo-data of a sphere
+that has different dimensions than earth, use `SetSnappingDistanceCustom` with the
+distance `d float64` in the same units used for the radius of the sphere.
+
 ## Contributing
 
 Contributions are welcome, I haven't got any guidelines or anything so maybe
