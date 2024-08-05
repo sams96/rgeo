@@ -5,5 +5,5 @@ github.com/go-test/deep v1.1.1/go.mod h1:5C2ZWiW0ErCdrYzpqxLbTX7MG14M9iiw8DgHncV
 github.com/golang/geo v0.0.0-20230421003525-6adc56603217 h1:HKlyj6in2JV6wVkmQ4XmG/EIm+SCYlPZ+V4GWit7Z+I=
 github.com/golang/geo v0.0.0-20230421003525-6adc56603217/go.mod h1:8wI0hitZ3a1IxZfeH3/5I97CI8i5cLGsYe7xNhQGs9U=
 github.com/hexops/gotextdiff v1.0.3 h1:gitA9+qJrrTCsiCl7+kh75nPqQt1cx4ZkudSTLoUqJM=
-github.com/twpayne/go-geom v1.5.4 h1:b8fiZd0SsEmQEeUdz2atT6KggF1KHiaZIi3DGi5p+sI=
-github.com/twpayne/go-geom v1.5.4/go.mod h1:Hw8RszQ2/d9Y/KfOm9CvUJo78BOoIA5g0e4P7JCVKvo=
+github.com/twpayne/go-geom v1.5.5 h1:7ODOrO615dEIXPORHgakLOIyqTGMKp6EYtEz2Emhfzw=
+github.com/twpayne/go-geom v1.5.5/go.mod h1:Makq3Z/s8PogsC3Kz8JEr6wBPs3GB2bjoqGYvhDrfE4=
