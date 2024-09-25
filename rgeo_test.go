@@ -263,6 +263,7 @@ func TestReverseGeocode_Countries(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping integration test (countries) for short mode")
 	}
+	t.Parallel()
 
 	for _, dataset := range []func() []byte{Countries110, Countries10} {
 		r, err := New(dataset)
@@ -278,6 +279,8 @@ func TestReverseGeocode_Countries(t *testing.T) {
 			test.expected.City = ""
 
 			t.Run(test.name, func(t *testing.T) {
+				t.Parallel()
+
 				result, err := r.ReverseGeocode(test.in)
 				if err != test.err {
 					t.Errorf("expected error: %s\n got: %s\n", test.err, err)
@@ -294,6 +297,7 @@ func TestReverseGeocode_Provinces(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping integraion test (provinces) in short mode")
 	}
+	t.Parallel()
 
 	r, err := New(Provinces10)
 	if err != nil {
@@ -306,6 +310,8 @@ func TestReverseGeocode_Provinces(t *testing.T) {
 		test.expected.City = ""
 
 		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
 			result, err := r.ReverseGeocode(test.in)
 			if err != test.err {
 				t.Errorf("expected error: %s\n got: %s\n", test.err, err)
@@ -321,6 +327,7 @@ func TestReverseGeocode_Cities(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping integration test (cities) in short mode.")
 	}
+	t.Parallel()
 
 	r, err := New(Provinces10, Cities10)
 	if err != nil {
@@ -330,6 +337,8 @@ func TestReverseGeocode_Cities(t *testing.T) {
 	for _, test := range testdata {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
 			result, err := r.ReverseGeocode(test.in)
 			if err != test.err {
 				t.Errorf("expected error: %s\n got: %s\n", test.err, err)

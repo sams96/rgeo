@@ -81,7 +81,6 @@ type Location struct {
 type Rgeo struct {
 	index *s2.ShapeIndex
 	locs  map[s2.Shape]Location
-	query *s2.ContainsPointQuery
 }
 
 // Go generate commands to regenerate the included datasets, this assumes you
@@ -146,9 +145,14 @@ func New(datasets ...func() []byte) (*Rgeo, error) {
 		ret.locs[p] = getLocationStrings(c.Properties)
 	}
 
-	ret.query = s2.NewContainsPointQuery(ret.index, s2.VertexModelOpen)
-
 	return ret, nil
+}
+
+// Build builds the underlying shape index. This ensures that future calls to
+// ReverseGeocode will be fast. If Build is not called, then the first lookup
+// will build the index implicitly and experience a 1s+ delay.
+func (r *Rgeo) Build() {
+	r.index.Build()
 }
 
 // ReverseGeocode returns the country in which the given coordinate is located.
@@ -157,7 +161,8 @@ func New(datasets ...func() []byte) (*Rgeo, error) {
 // in the zeroth position and the latitude in the first position
 // (i.e. []float64{lon, lat}).
 func (r *Rgeo) ReverseGeocode(loc geom.Coord) (Location, error) {
-	res := r.query.ContainingShapes(pointFromCoord(loc))
+	query := s2.NewContainsPointQuery(r.index, s2.VertexModelOpen)
+	res := query.ContainingShapes(pointFromCoord(loc))
 	if len(res) == 0 {
 		return Location{}, ErrLocationNotFound
 	}
