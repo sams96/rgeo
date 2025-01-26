@@ -42,6 +42,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/golang/geo/s1"
+	"math"
 	"strings"
 
 	"github.com/golang/geo/s2"
@@ -79,9 +81,10 @@ type Location struct {
 
 // Rgeo is the type used to hold pre-created polygons for reverse geocoding.
 type Rgeo struct {
-	index *s2.ShapeIndex
-	locs  map[s2.Shape]Location
-	query *s2.ContainsPointQuery
+	index      *s2.ShapeIndex
+	locs       map[s2.Shape]Location
+	pointQuery *s2.ContainsPointQuery
+	edgeQuery  *s2.EdgeQuery
 }
 
 // Go generate commands to regenerate the included datasets, this assumes you
@@ -146,9 +149,35 @@ func New(datasets ...func() []byte) (*Rgeo, error) {
 		ret.locs[p] = getLocationStrings(c.Properties)
 	}
 
-	ret.query = s2.NewContainsPointQuery(ret.index, s2.VertexModelOpen)
+	ret.pointQuery = s2.NewContainsPointQuery(ret.index, s2.VertexModelOpen)
+
+	// Default snapping distance is 5km on earth
+	ret.SetSnappingDistanceEarth(5)
 
 	return ret, nil
+}
+
+// SetSnappingDistanceEarth sets ReverseGeocodeSnapping snap distance on Earth.
+// Only edges within the defined radius around given points will be considered
+// by ReverseGeocodeSnapping.
+//
+// The input is the snapping distance in kilometers. Must be positive.
+func (r *Rgeo) SetSnappingDistanceEarth(d float64) {
+	const earthRadiusKM = 6371
+	r.SetSnappingDistanceCustom(d, earthRadiusKM)
+}
+
+// SetSnappingDistanceCustom recalculates the underlying ChordAngle for the
+// DistanceLimit of nearest-edge queries via ReverseGeocodeSnapping.
+//
+// The inputs are the snapping distance on the sphere's surface in kilometers,
+// and the radius of the sphere used in the dataset.
+func (r *Rgeo) SetSnappingDistanceCustom(d float64, radius float64) {
+	angle := math.Sin(d / radius)
+	options := s2.NewClosestEdgeQueryOptions().
+		MaxResults(1).
+		DistanceLimit(s1.ChordAngleFromAngle(s1.Angle(angle)).Successor())
+	r.edgeQuery = s2.NewClosestEdgeQuery(r.index, options)
 }
 
 // ReverseGeocode returns the country in which the given coordinate is located.
@@ -157,12 +186,37 @@ func New(datasets ...func() []byte) (*Rgeo, error) {
 // in the zeroth position and the latitude in the first position
 // (i.e. []float64{lon, lat}).
 func (r *Rgeo) ReverseGeocode(loc geom.Coord) (Location, error) {
-	res := r.query.ContainingShapes(pointFromCoord(loc))
+	res := r.pointQuery.ContainingShapes(pointFromCoord(loc))
 	if len(res) == 0 {
 		return Location{}, ErrLocationNotFound
 	}
 
 	return r.combineLocations(res), nil
+}
+
+func (r *Rgeo) ReverseGeocodeSnapping(coord geom.Coord) (Location, error) {
+	// Try to get a hit first, i.e. we are already in a country
+	loc, err := r.ReverseGeocode(coord)
+	if err == nil {
+		return loc, nil
+	} else if !errors.Is(err, ErrLocationNotFound) {
+		return Location{}, err
+	}
+
+	// Not in a country, so look for the closest country in the defined margin
+	point := pointFromCoord(coord)
+	res := r.edgeQuery.FindEdges(s2.NewMinDistanceToPointTarget(point))
+	if len(res) == 0 {
+		return Location{}, ErrLocationNotFound
+	}
+
+	// Get shape of the closest country in our margin
+	shape := r.index.Shape(res[0].ShapeID())
+	if shape == nil {
+		return Location{}, ErrLocationNotFound
+	}
+
+	return r.combineLocations([]s2.Shape{shape}), nil
 }
 
 // combineLocations combines the Locations for the given s2 Shapes.
