@@ -5,14 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.3.0] - WIP
+## [1.3.0] - 2025-03-08
 
-This release is a work in progress.
+### Added
+ - New `Build` method, see below
 
 ### Changed
  - Make `ReverseGeocode` thread safe, thanks to @mologie (#34)
 	- This makes the first call to `ReverseGeocode` much slower. This can be
 	mitigated by calling `Build` first.
+ -  Optimizations: Only link used datasets, avoid copies, avoid pkg/errors
+ dependency, thanks to @mologie (#26)
+ - Update natural earth data to v5.1.2, thanks to @SaTae66
+ - Bump dependency versions, thanks to @dependabot
 
 ## [1.2.0] - 2023-01-03
 

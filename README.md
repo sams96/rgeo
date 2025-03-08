@@ -16,6 +16,20 @@ the data beforehand (links to which are in the files). If you want to use your
 own dataset, check out
 [datagen](https://github.com/sams96/rgeo/tree/master/datagen).
 
+## Current status
+
+Rgeo is not being activly developed. I will try to keep dependencies up to date
+but no new features will be added. You can read more
+[here](https://sams96.github.io/rgeo-5-years-on) if you are interested. If you
+are looking for an alternative, I recommend:
+ - [smilyorg/tinygpkg](https://github.com/smilyorg/tinygpkg) - Very nice package
+ inspired by Rgeo. It uses a different approach to vastly reduce startup time at
+ the cost of slightly slower queries.
+ - [authenticvision/rgeo](https://github.com/authenticvision/rgeo) - The most
+ active fork of Rgeo, and most of the contributions I’ve had have come from
+ these guys.
+Otherwise it should be fine to keep using Rgeo with its existing features.
+
 ## Key Features
 
  - **Fast** - So I haven't _actually_ benchmarked other reverse geocoding tools
@@ -143,9 +157,4 @@ fmt.Printf("%s\n", loc.SubRegion)
 
 ## Contributing
 
-Contributions are welcome, I haven't got any guidelines or anything so maybe
-just make an issue first.
-
-## Projects using rgeo
-
- - [rgeoSrv](https://github.com/sams96/rgeoSrv) - rgeo as a microservice
+I'm not accepting new features for the time being, see above.
