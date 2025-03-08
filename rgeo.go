@@ -13,27 +13,6 @@ CONDITIONS OF ANY KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations under the License.
 */
 
-/*
-Package rgeo is a fast, simple solution for local reverse geocoding.
-
-Rather than relying on external software or online APIs, rgeo packages all of
-the data it needs in your binary. This means it will only works down to the
-level of cities, but if that's all you need then this is the library for you.
-
-rgeo uses data from https://naturalearthdata.com, if your coordinates are going
-to be near specific borders I would advise checking the data beforehand (links
-to which are in the files). If you want to use your own dataset, check out the
-datagen folder.
-
-# Installation
-
-	go get github.com/sams96/rgeo
-
-# Contributing
-
-Contributions are welcome, I haven't got any guidelines or anything so maybe
-just make an issue first.
-*/
 package rgeo
 
 import (
