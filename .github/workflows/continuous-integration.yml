@@ -1,17 +1,19 @@
 name: continuous-integration
+
 on:
   push:
     branches:
       - 'master'
   pull_request:
+
 jobs:
   ubuntu:
     runs-on: ubuntu-latest
     steps:
-    - name: Set up Go 1.21
+    - name: Set up Go 1.24
       uses: actions/setup-go@v1
       with:
-        go-version: 1.21.x
+        go-version: 1.24.x
       id: go
 
     - name: Check out code into the Go module directory
@@ -38,10 +40,10 @@ jobs:
   macOS:
     runs-on: macos-latest
     steps:
-    - name: Set up Go 1.21
+    - name: Set up Go 1.24
       uses: actions/setup-go@v1
       with:
-        go-version: 1.21.x
+        go-version: 1.24.x
       id: go
 
     - name: Check out code into the Go module directory
@@ -59,10 +61,10 @@ jobs:
   windows:
     runs-on: windows-latest
     steps:
-    - name: Set up Go 1.21
+    - name: Set up Go 1.24
       uses: actions/setup-go@v1
       with:
-        go-version: 1.21.x
+        go-version: 1.24.x
       id: go
 
     - name: Check out code into the Go module directory
